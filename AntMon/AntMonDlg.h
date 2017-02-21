@@ -4,15 +4,25 @@
 
 #pragma once
 #include "afxwin.h"
+#include <concurrent_queue.h>
+using namespace Concurrency;
 
 #define RX_BUFFER_SIZE	64
 #define MAX_DEVICES		64
+#define HUEBUFFER_COUNT	64
+#define HUEBUFFER_SIZE	256
 
 typedef struct _ANTMsg {
 	USHORT deviceNo;
 	USHORT deviceType;
 	USHORT heartRate;
 } ANTMsg ;
+
+typedef struct _HUECommand {
+	char buffer[HUEBUFFER_SIZE];
+	int length;
+} HUECommand;
+
 
 // CAntMonDlg dialog
 class CAntMonDlg : public CDialogEx
@@ -43,6 +53,8 @@ protected:
 public:
 	afx_msg void OnBnClickedButtonStart();
 	static void ANTCallback(UCHAR ucEvent_, char* pcBuffer_);
+
+
 	CString SendHTTPMsg(LPCTSTR pszUrl, int method, LPVOID body, DWORD bodyLen, LPCTSTR pszReferer/* = NULL*/,  LPCTSTR pszAppendHeader/* = NULL*/);
 	ANTMsg m_rxMsg[MAX_DEVICES];
 
@@ -57,4 +69,17 @@ public:
 	int AddMsgBuf(USHORT deviceNo, USHORT deviceType);
 	void AddNewDevice(ANTMsg* pMsg);
 	void ControlHUE(ANTMsg* pMsg);
+	void CleanUp();
+
+	// HUE Control
+	static UINT HueThread(LPVOID _mothod);
+	bool m_bHueThreadStop;
+	CString m_strHueUrl;
+	concurrent_queue< HUECommand* > m_hueCommandQ;
+	void FuncHueThread(bool bStart);
+	CWinThread* m_pHueThread;
+	HANDLE m_hHueEvent;
+	bool AddHueCommand(HUECommand* pCommand);
+	
+	void FuncService(bool bStart);
 };
