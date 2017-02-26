@@ -63,8 +63,10 @@ CAntMonDlg::CAntMonDlg(CWnd* pParent /*=NULL*/)
 	, m_bHueThreadStop(false)
 	, m_pHueThread(NULL)
 {
+
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
-	m_strHueUrl = _T("http://192.168.0.36/api/q2HQvhloDSN5MQHa3zDGyfpgR34CDWzTOh394zDx/");
+	m_strHueUrl = _T("http://192.168.0.36/api/q2HQvhloDSN5MQHa3zDGyfpgR34CDWzTOh394zDx/lights/9/state");
+	//m_strHueUrl = _T("http://192.168.1.4/api/q2HQvhloDSN5MQHa3zDGyfpgR34CDWzTOh394zDx/lights/5/state");
 	for (int i = 0;i < MAX_DEVICES;i++)
 	{
 		memset(&m_rxMsg[i], 0, sizeof(ANTMsg));
@@ -227,14 +229,12 @@ void CAntMonDlg::ANTCallback(UCHAR ucEvent_, char* pcBuffer_)
 		case ANT_EVENT_DEBUG:
 		{
 			if (pcBuffer_)
-				pDlgMon->AddLog((LPCTSTR)pcBuffer_);
+				pDlgMon->AddLog(CString(pcBuffer_));
 			break;
 		}
 		case ANT_EVENT_CONNECT:
 		{
 			pDlgMon->AddLog(_T("Connected"));
-
-
 
 			// Config scanning mode
 			if (TRUE == ANTControl_ConfigScanningMode(0, 0, 0, 57, TRUE))
@@ -339,13 +339,29 @@ void CAntMonDlg::HandleMessage(UCHAR *pcBuffer_)
 	}
 
 	if (pMsg->deviceType == 120) {
-		UCHAR hr = pcBuffer_[7];
-		if (pMsg->heartRate != hr)
+		UCHAR bpm = pcBuffer_[7];
+		USHORT time = (0xFF00 & (USHORT)pcBuffer_[5] << 4) |pcBuffer_[4];
+		USHORT count = pcBuffer_[6];
+
+		TRACE("Heart Time:%d\tCount:%d\tBPM:%d\n", time, count, bpm);
+
+		if (pMsg->hrBpm != bpm || pMsg->hrCount!=count)
 		{
-			pMsg->heartRate = hr;
-			TRACE(_T("Heart Rate %d\n"), pMsg->heartRate);
+			pMsg->hrBpm = bpm;
+			pMsg->hrCount = count;
+			pMsg->hrTime = time;
+
 			ControlHUE(pMsg);
 		}
+	}
+	else if (pMsg->deviceType == 17 && pcBuffer_[0]==25) {
+		char szBody[256];
+		HUECommand *pCommand = new HUECommand();
+		sprintf_s(pCommand->buffer, "{\"bri\":%d}", pcBuffer_[5]*2);// (pMsg->heartRate - 40) * 5);
+		pCommand->length = strlen(pCommand->buffer);
+		AddHueCommand(pCommand);
+		TRACE(_T("Power Rate %d %d %d %d %d %d %d %d\n"), pcBuffer_[0], pcBuffer_[1], pcBuffer_[2], pcBuffer_[3], pcBuffer_[4], pcBuffer_[5], pcBuffer_[6], pcBuffer_[7]);
+//		TRACE(_T("Power Rate %d\t%d\n"), pcBuffer_[0],pcBuffer_[5]);
 	}
 	
 }
@@ -371,24 +387,25 @@ void CAntMonDlg::AddNewDevice(ANTMsg* pMsg)
 	m_listLog.InsertString(0, msg);
 }
 
-
+int bri = 0;
 void CAntMonDlg::ControlHUE(ANTMsg* pMsg)
 {
 	char szBody[256];
-	HUECommand *pCommand = new HUECommand();
-	sprintf_s(pCommand->buffer, "{\"bri\":%d}", (pMsg->heartRate - 40) * 30);
-	AddHueCommand(pCommand);
+	HUECommand *pCommand = NULL;
+	if (pMsg->deviceType == 120) {
+		pCommand = new HUECommand();
+		int minBPM = 30;
+		int maxBPM = 210;
 
-	/*
-	SendHTTPMsg(
-		_T("http://192.168.0.36/api/q2HQvhloDSN5MQHa3zDGyfpgR34CDWzTOh394zDx/lights/9/state"), 
-		CHttpConnection::HTTP_VERB_PUT, 
-		szBody,
-		strlen(szBody),
-		NULL, 
-		NULL
-	);
-	*/
+		//sprintf_s(pCommand->buffer, "{\"bri\":%d}", 254*(pMsg->hrBpm-minBPM)/(maxBPM- minBPM));
+		bri = (bri + 1) < 254 ? (bri + 1) : 0;
+		sprintf_s(pCommand->buffer, "{\"bri\":%d}", bri);
+	}
+	if (pCommand != NULL)
+	{
+		pCommand->length = strlen(pCommand->buffer);
+		AddHueCommand(pCommand);
+	}
 }
 
 CString CAntMonDlg::SendHTTPMsg(LPCTSTR pszUrl, int method, LPVOID body, DWORD bodyLen, LPCTSTR pszReferer/* = NULL*/, LPCTSTR pszAppendHeader/* = NULL*/)
@@ -516,20 +533,22 @@ UINT CAntMonDlg::HueThread(LPVOID pParam)
 	strHeaders = _T("User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0)  like Gecko");
 	pHttpFile->AddRequestHeaders(strHeaders);
 
+
 	DWORD dwRet;
 	while (1)
 	{
-		dwRet = WaitForSingleObject(event, 1000);
+		dwRet = WaitForSingleObject(event, INFINITE);
 		if (pDlg->m_bHueThreadStop) break;
 
 		HUECommand *pCommand = NULL;
-
+		bool bRet = true;
 		while (pCommandQ->try_pop(pCommand))
 		{
-			pHttpFile->SendRequest(strHeaders, pCommand->buffer, pCommand->length);
+
+			TRACE("Q Size : %d, Hue : %s\n", pCommandQ->unsafe_size(), pCommand->buffer);
+			bRet = pHttpFile->SendRequest(strHeaders, pCommand->buffer, pCommand->length);
 			delete pCommand;
-		}
-		
+		}		
 	}
 
 	// 세션해제
@@ -550,7 +569,6 @@ UINT CAntMonDlg::HueThread(LPVOID pParam)
 		delete pSession;
 		pSession = NULL;
 	}
-
 	return 0;
 }
 
@@ -579,6 +597,7 @@ void CAntMonDlg::FuncHueThread(bool bStart)
 	}
 	else {
 		m_bHueThreadStop = true;
+		SetEvent(m_hHueEvent);
 		if (m_pHueThread != NULL)
 		{
 			CloseHandle(m_hHueEvent);
@@ -592,7 +611,8 @@ void CAntMonDlg::FuncHueThread(bool bStart)
 bool CAntMonDlg::AddHueCommand(HUECommand *pCommand)
 {
 	m_hueCommandQ.push(pCommand);
-	return false;
+	SetEvent(m_hHueEvent);
+	return true;
 }
 
 

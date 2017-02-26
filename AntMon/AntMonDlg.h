@@ -15,7 +15,9 @@ using namespace Concurrency;
 typedef struct _ANTMsg {
 	USHORT deviceNo;
 	USHORT deviceType;
-	USHORT heartRate;
+	USHORT hrBpm;
+	USHORT hrCount;
+	USHORT hrTime;
 } ANTMsg ;
 
 typedef struct _HUECommand {

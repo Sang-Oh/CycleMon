@@ -93,8 +93,10 @@ BOOL ANT_Load(void)
       return TRUE;
 
    hANTdll = LoadLibraryA("ANT_DLL.dll");
-   if (hANTdll == NULL)
-      return FALSE;
+   if (hANTdll == NULL) {
+	   DWORD ret = GetLastError();
+	   return FALSE;
+   }
 
    ANT_Init = (P_ANT_INIT) GetProcAddress(hANTdll, "ANT_Init");
    ANT_Close = (P_ANT_CLOSE) GetProcAddress(hANTdll, "ANT_Close");
