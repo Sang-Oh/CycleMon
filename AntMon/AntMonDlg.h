@@ -5,12 +5,15 @@
 #pragma once
 #include "afxwin.h"
 #include <concurrent_queue.h>
+#include "afxcmn.h"
 using namespace Concurrency;
 
 #define RX_BUFFER_SIZE	64
 #define MAX_DEVICES		64
 #define HUEBUFFER_COUNT	64
 #define HUEBUFFER_SIZE	256
+#define MAX_RIDERS		2
+#define FILE_RIDER		"C:\\Sang\\ant\\CyclePark\\CycleMon\\rider.ini"
 
 typedef struct _ANTMsg {
 	USHORT deviceNo;
@@ -84,4 +87,7 @@ public:
 	bool AddHueCommand(HUECommand* pCommand);
 	
 	void FuncService(bool bStart);
+	CListCtrl m_listRider;
+	void InitRiderList();
+	int ReadRideFile();
 };

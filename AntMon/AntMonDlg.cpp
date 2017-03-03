@@ -65,7 +65,7 @@ CAntMonDlg::CAntMonDlg(CWnd* pParent /*=NULL*/)
 {
 
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
-	m_strHueUrl = _T("http://192.168.0.36/api/q2HQvhloDSN5MQHa3zDGyfpgR34CDWzTOh394zDx/lights/9/state");
+	m_strHueUrl = _T("http://192.168.0.36/api/q2HQvhloDSN5MQHa3zDGyfpgR34CDWzTOh394zDx/lights/4/state");
 	//m_strHueUrl = _T("http://192.168.1.4/api/q2HQvhloDSN5MQHa3zDGyfpgR34CDWzTOh394zDx/lights/5/state");
 	for (int i = 0;i < MAX_DEVICES;i++)
 	{
@@ -78,6 +78,7 @@ void CAntMonDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_LIST_LOG, m_listLog);
+	DDX_Control(pDX, IDC_LIST_RIDER, m_listRider);
 }
 
 BEGIN_MESSAGE_MAP(CAntMonDlg, CDialogEx)
@@ -123,6 +124,9 @@ BOOL CAntMonDlg::OnInitDialog()
 
 	// TODO: Add extra initialization here
 	pDlgMon = this;
+
+	InitRiderList();
+	ReadRideFile();
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -345,14 +349,14 @@ void CAntMonDlg::HandleMessage(UCHAR *pcBuffer_)
 
 		TRACE("Heart Time:%d\tCount:%d\tBPM:%d\n", time, count, bpm);
 
-		if (pMsg->hrBpm != bpm || pMsg->hrCount!=count)
-		{
+		//if (pMsg->hrBpm != bpm || pMsg->hrCount!=count)
+		//{
 			pMsg->hrBpm = bpm;
 			pMsg->hrCount = count;
 			pMsg->hrTime = time;
 
 			ControlHUE(pMsg);
-		}
+		//}
 	}
 	else if (pMsg->deviceType == 17 && pcBuffer_[0]==25) {
 		char szBody[256];
@@ -394,11 +398,11 @@ void CAntMonDlg::ControlHUE(ANTMsg* pMsg)
 	HUECommand *pCommand = NULL;
 	if (pMsg->deviceType == 120) {
 		pCommand = new HUECommand();
-		int minBPM = 30;
-		int maxBPM = 210;
+		int minBPM = 50;
+		int maxBPM = 60;
 
 		//sprintf_s(pCommand->buffer, "{\"bri\":%d}", 254*(pMsg->hrBpm-minBPM)/(maxBPM- minBPM));
-		bri = (bri + 1) < 254 ? (bri + 1) : 0;
+		bri = (bri + 1) < 254 ? (bri + 10) : 0;
 		sprintf_s(pCommand->buffer, "{\"bri\":%d}", bri);
 	}
 	if (pCommand != NULL)
@@ -526,12 +530,7 @@ UINT CAntMonDlg::HueThread(LPVOID pParam)
 	pSession = new CInternetSession;
 	pHttpConnect = pSession->GetHttpConnection(strServerName);
 
-	pHttpFile = pHttpConnect->OpenRequest(CHttpConnection::HTTP_VERB_PUT, strObject, NULL);
 
-	strHeaders = _T("Content-Type: application/x-www-form-urlencoded");
-	pHttpFile->AddRequestHeaders(strHeaders);
-	strHeaders = _T("User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0)  like Gecko");
-	pHttpFile->AddRequestHeaders(strHeaders);
 
 
 	DWORD dwRet;
@@ -540,23 +539,41 @@ UINT CAntMonDlg::HueThread(LPVOID pParam)
 		dwRet = WaitForSingleObject(event, INFINITE);
 		if (pDlg->m_bHueThreadStop) break;
 
+
+
 		HUECommand *pCommand = NULL;
 		bool bRet = true;
 		while (pCommandQ->try_pop(pCommand))
 		{
 
+
 			TRACE("Q Size : %d, Hue : %s\n", pCommandQ->unsafe_size(), pCommand->buffer);
-			bRet = pHttpFile->SendRequest(strHeaders, pCommand->buffer, pCommand->length);
+			try
+			{
+				pHttpFile = pHttpConnect->OpenRequest(CHttpConnection::HTTP_VERB_PUT, strObject, NULL);
+
+				strHeaders = _T("Content-Type: application/x-www-form-urlencoded");
+				pHttpFile->AddRequestHeaders(strHeaders);
+				strHeaders = _T("User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0)  like Gecko");
+				pHttpFile->AddRequestHeaders(strHeaders);
+
+				bRet = pHttpFile->SendRequest(strHeaders, pCommand->buffer, pCommand->length);
+				// 技记秦力
+				if (pHttpFile)
+				{
+					pHttpFile->Close();
+					delete pHttpFile;
+					pHttpFile = NULL;
+				}
+			}
+			catch (CInternetException* pEx) {
+				TRACE("CInternetException %x", pEx->m_dwError);
+			}
 			delete pCommand;
 		}		
 	}
 
-	// 技记秦力
-	if (pHttpFile)
-	{
-		delete pHttpFile;
-		pHttpFile = NULL;
-	}
+
 	if (pHttpConnect)
 	{
 		pHttpConnect->Close();
@@ -627,4 +644,32 @@ void CAntMonDlg::FuncService(bool bStart)
 		StopMon();
 		CleanUp();
 	}
+}
+
+
+void CAntMonDlg::InitRiderList()
+{
+	m_listRider.InsertColumn(0, "No", LVCFMT_LEFT, 50, -1);
+	m_listRider.InsertColumn(1, "Power", LVCFMT_LEFT, 60, -1);
+	m_listRider.InsertColumn(2, "Cadence", LVCFMT_LEFT, 60, -1);
+	m_listRider.InsertColumn(3, "Heart", LVCFMT_LEFT, 60, -1);
+	m_listRider.InsertColumn(4, "Weight", LVCFMT_LEFT, 60, -1);
+	m_listRider.InsertColumn(5, "WPK", LVCFMT_LEFT, 60, -1);
+}
+
+
+int CAntMonDlg::ReadRideFile()
+{
+	CString iniFile = FILE_RIDER;
+	char szBuffer[MAX_PATH];
+	for (int i = 0;i < MAX_RIDERS;i++)
+	{
+		
+		CString section;
+		section.Format("rider%d", i + 1);
+		m_listRider.InsertItem(0, section);
+		GetPrivateProfileString(section, "name", "rider1", szBuffer, sizeof(szBuffer), iniFile);
+		m_listRider.SetItem(0, 1, LVIF_TEXT, szBuffer, -1, -1, -1, NULL);
+	}
+	return 0;
 }
