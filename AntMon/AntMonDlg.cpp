@@ -341,33 +341,37 @@ void CAntMonDlg::HandleMessage(UCHAR *pcBuffer_)
 
 		AddNewDevice(pMsg);
 	}
-
-	if (pMsg->deviceType == 120) {
+	
+	if (pMsg->deviceType == 120) {	// heartrate
 		UCHAR bpm = pcBuffer_[7];
 		USHORT time = (0xFF00 & (USHORT)pcBuffer_[5] << 4) |pcBuffer_[4];
 		USHORT count = pcBuffer_[6];
 
 		TRACE("Heart Time:%d\tCount:%d\tBPM:%d\n", time, count, bpm);
 
-		//if (pMsg->hrBpm != bpm || pMsg->hrCount!=count)
-		//{
+		if (pMsg->hrBpm != bpm || pMsg->hrCount!=count)
+		{
 			pMsg->hrBpm = bpm;
 			pMsg->hrCount = count;
 			pMsg->hrTime = time;
 
-			ControlHUE(pMsg);
-		//}
+		//	ControlHUE(pMsg);
+		}
 	}
-	else if (pMsg->deviceType == 17 && pcBuffer_[0]==25) {
+	else if (pMsg->deviceType == 17 && pcBuffer_[0]==25) {	// bike power
+		pMsg->pwrValue = pcBuffer_[5];
+		/*
 		char szBody[256];
 		HUECommand *pCommand = new HUECommand();
 		sprintf_s(pCommand->buffer, "{\"bri\":%d}", pcBuffer_[5]*2);// (pMsg->heartRate - 40) * 5);
 		pCommand->length = strlen(pCommand->buffer);
 		AddHueCommand(pCommand);
+		*/
 		TRACE(_T("Power Rate %d %d %d %d %d %d %d %d\n"), pcBuffer_[0], pcBuffer_[1], pcBuffer_[2], pcBuffer_[3], pcBuffer_[4], pcBuffer_[5], pcBuffer_[6], pcBuffer_[7]);
-//		TRACE(_T("Power Rate %d\t%d\n"), pcBuffer_[0],pcBuffer_[5]);
 	}
-	
+	else if (pMsg->deviceType == 121) {	// bike candence and speed
+
+	}
 }
 
 int CAntMonDlg::AddMsgBuf(USHORT deviceNo, USHORT deviceType)
@@ -383,12 +387,23 @@ int CAntMonDlg::AddMsgBuf(USHORT deviceNo, USHORT deviceType)
 	return nMsgIndex;
 }
 
-
+long ncnt = 0;
 void CAntMonDlg::AddNewDevice(ANTMsg* pMsg)
 {
 	CString msg;
-	msg.Format(_T("Added %d:%d"), pMsg->deviceNo, pMsg->deviceType);
+	msg.Format(_T("New Device %d:%d"), pMsg->deviceNo, pMsg->deviceType);
 	m_listLog.InsertString(0, msg);
+	TRACE("%s\n", msg);
+	/*
+	CString list = "26404:17 6404:11 25796:17 5796:11 26416:17 6416:121 26322:17 6322:11 26284:121 6284:11";
+	CString msg;
+	msg.Format(_T("%d:%d"), pMsg->deviceNo, pMsg->deviceType);
+	if (list.Find(msg, 0) == -1)
+	{
+		m_listLog.InsertString(0, msg);
+		TRACE("%s\n", msg);
+	}
+	*/
 }
 
 int bri = 0;
@@ -649,12 +664,16 @@ void CAntMonDlg::FuncService(bool bStart)
 
 void CAntMonDlg::InitRiderList()
 {
-	m_listRider.InsertColumn(0, "No", LVCFMT_LEFT, 50, -1);
-	m_listRider.InsertColumn(1, "Power", LVCFMT_LEFT, 60, -1);
-	m_listRider.InsertColumn(2, "Cadence", LVCFMT_LEFT, 60, -1);
-	m_listRider.InsertColumn(3, "Heart", LVCFMT_LEFT, 60, -1);
-	m_listRider.InsertColumn(4, "Weight", LVCFMT_LEFT, 60, -1);
-	m_listRider.InsertColumn(5, "WPK", LVCFMT_LEFT, 60, -1);
+	m_listRider.InsertColumn(0, "No", LVCFMT_LEFT, 30, -1);
+	m_listRider.InsertColumn(1, "Name", LVCFMT_LEFT, 100, -1);
+	m_listRider.InsertColumn(2, "Weight", LVCFMT_LEFT, 60, -1);
+	m_listRider.InsertColumn(3, "PWR", LVCFMT_LEFT, 60, -1);
+	m_listRider.InsertColumn(4, "PWR_ID", LVCFMT_LEFT, 60, -1);
+	m_listRider.InsertColumn(5, "HRT", LVCFMT_LEFT, 60, -1);
+	m_listRider.InsertColumn(6, "HRT_ID", LVCFMT_LEFT, 60, -1);
+	m_listRider.InsertColumn(7, "Cadence", LVCFMT_LEFT, 60, -1);
+	m_listRider.InsertColumn(8, "WPK", LVCFMT_LEFT, 60, -1);
+
 }
 
 
@@ -662,14 +681,24 @@ int CAntMonDlg::ReadRideFile()
 {
 	CString iniFile = FILE_RIDER;
 	char szBuffer[MAX_PATH];
+	CString section;
+	long lAnt_ID;
 	for (int i = 0;i < MAX_RIDERS;i++)
 	{
+		section.Format("%02d", i + 1);
+		m_listRider.InsertItem(i, section);
 		
-		CString section;
-		section.Format("rider%d", i + 1);
-		m_listRider.InsertItem(0, section);
-		GetPrivateProfileString(section, "name", "rider1", szBuffer, sizeof(szBuffer), iniFile);
-		m_listRider.SetItem(0, 1, LVIF_TEXT, szBuffer, -1, -1, -1, NULL);
+		GetPrivateProfileString(section, "name", "rider", szBuffer, sizeof(szBuffer), iniFile);
+		m_listRider.SetItem(i, 1, LVIF_TEXT, szBuffer, -1, -1, -1, NULL);
+		
+		GetPrivateProfileString(section, "weight", "0", szBuffer, sizeof(szBuffer), iniFile);
+		m_listRider.SetItem(i, 2, LVIF_TEXT, szBuffer, -1, -1, -1, NULL);
+
+		GetPrivateProfileString(section, "ant_power_id", "0", szBuffer, sizeof(szBuffer), iniFile);
+		m_listRider.SetItem(i, 4, LVIF_TEXT, szBuffer, -1, -1, -1, NULL);
+
+		GetPrivateProfileString(section, "ant_heart_id", "0", szBuffer, sizeof(szBuffer), iniFile);
+		m_listRider.SetItem(i, 6, LVIF_TEXT, szBuffer, -1, -1, -1, NULL);
 	}
 	return 0;
 }

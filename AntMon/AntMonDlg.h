@@ -12,15 +12,30 @@ using namespace Concurrency;
 #define MAX_DEVICES		64
 #define HUEBUFFER_COUNT	64
 #define HUEBUFFER_SIZE	256
-#define MAX_RIDERS		2
+#define MAX_RIDERS		8
 #define FILE_RIDER		"C:\\Sang\\ant\\CyclePark\\CycleMon\\rider.ini"
+
+typedef struct _RIDER {
+	char name[256];
+	float weight;
+	USHORT ant_power_id;
+	USHORT power;
+	USHORT ant_heart_id;
+	USHORT heart;
+	USHORT hue_id;
+} RIDER;
 
 typedef struct _ANTMsg {
 	USHORT deviceNo;
 	USHORT deviceType;
+	
 	USHORT hrBpm;
 	USHORT hrCount;
 	USHORT hrTime;
+
+	USHORT pwrValue;
+	USHORT pwrTime;
+	USHORT pwrCount;
 } ANTMsg ;
 
 typedef struct _HUECommand {
