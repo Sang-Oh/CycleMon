@@ -6,6 +6,7 @@
 #include "afxwin.h"
 #include <concurrent_queue.h>
 #include "afxcmn.h"
+#include "DashBoard.h"
 using namespace Concurrency;
 
 #define RX_BUFFER_SIZE	64
@@ -13,7 +14,7 @@ using namespace Concurrency;
 #define HUEBUFFER_COUNT	64
 #define HUEBUFFER_SIZE	256
 #define MAX_RIDERS		8
-#define FILE_RIDER		"C:\\Sang\\ant\\CyclePark\\CycleMon\\rider.ini"
+#define FILE_RIDER		"..\\rider.ini"
 
 typedef struct _RIDER {
 	char name[256];
@@ -105,4 +106,7 @@ public:
 	CListCtrl m_listRider;
 	void InitRiderList();
 	int ReadRideFile();
+	CDashBoard* m_pWndDashboard;
+	CDashBoard* CreateDashBoard();
+	afx_msg void OnBnClickedButtonDashboard();
 };

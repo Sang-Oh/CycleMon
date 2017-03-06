@@ -63,7 +63,6 @@ CAntMonDlg::CAntMonDlg(CWnd* pParent /*=NULL*/)
 	, m_bHueThreadStop(false)
 	, m_pHueThread(NULL)
 {
-
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	m_strHueUrl = _T("http://192.168.0.36/api/q2HQvhloDSN5MQHa3zDGyfpgR34CDWzTOh394zDx/lights/4/state");
 	//m_strHueUrl = _T("http://192.168.1.4/api/q2HQvhloDSN5MQHa3zDGyfpgR34CDWzTOh394zDx/lights/5/state");
@@ -88,6 +87,7 @@ BEGIN_MESSAGE_MAP(CAntMonDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_START, &CAntMonDlg::OnBnClickedButtonStart)
 	ON_BN_CLICKED(IDC_BUTTON_STOP, &CAntMonDlg::OnBnClickedButtonStop)
 	ON_WM_DESTROY()
+	ON_BN_CLICKED(IDC_BUTTON_DASHBOARD, &CAntMonDlg::OnBnClickedButtonDashboard)
 END_MESSAGE_MAP()
 
 
@@ -127,6 +127,8 @@ BOOL CAntMonDlg::OnInitDialog()
 
 	InitRiderList();
 	ReadRideFile();
+
+	m_pWndDashboard = CreateDashBoard();
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -306,7 +308,9 @@ void CAntMonDlg::OnBnClickedButtonStop()
 
 void CAntMonDlg::OnDestroy()
 {
-	
+	if (m_pWndDashboard != NULL)
+		m_pWndDashboard->CloseWindow();
+
 	FuncService(false);
 	CDialogEx::OnDestroy();
 	
@@ -545,9 +549,6 @@ UINT CAntMonDlg::HueThread(LPVOID pParam)
 	pSession = new CInternetSession;
 	pHttpConnect = pSession->GetHttpConnection(strServerName);
 
-
-
-
 	DWORD dwRet;
 	while (1)
 	{
@@ -701,4 +702,25 @@ int CAntMonDlg::ReadRideFile()
 		m_listRider.SetItem(i, 6, LVIF_TEXT, szBuffer, -1, -1, -1, NULL);
 	}
 	return 0;
+}
+
+
+CDashBoard* CAntMonDlg::CreateDashBoard()
+{
+	CDashBoard *pWnd = NULL;
+	CRect rect;
+	CString strClass = AfxRegisterWndClass(CS_HREDRAW | CS_VREDRAW, 0, (HBRUSH)(COLOR_WINDOW + 1));
+	pWnd = new CDashBoard();
+	GetDesktopWindow()->GetWindowRect(&rect);
+	pWnd->CreateEx(WS_EX_TOOLWINDOW,
+		strClass, _T("CyleMon"), WS_POPUP, rect.left, rect.top, rect.Width(), rect.Height(), m_hWnd, NULL, NULL);
+
+	return pWnd;
+}
+
+
+void CAntMonDlg::OnBnClickedButtonDashboard()
+{
+	if (m_pWndDashboard != NULL)
+		m_pWndDashboard->ShowWindow(SW_SHOW);
 }
