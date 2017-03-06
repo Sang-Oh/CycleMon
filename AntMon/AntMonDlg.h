@@ -16,15 +16,6 @@ using namespace Concurrency;
 #define MAX_RIDERS		8
 #define FILE_RIDER		"..\\rider.ini"
 
-typedef struct _RIDER {
-	char name[256];
-	float weight;
-	USHORT ant_power_id;
-	USHORT power;
-	USHORT ant_heart_id;
-	USHORT heart;
-	USHORT hue_id;
-} RIDER;
 
 typedef struct _ANTMsg {
 	USHORT deviceNo;
@@ -104,9 +95,14 @@ public:
 	
 	void FuncService(bool bStart);
 	CListCtrl m_listRider;
+	RIDER m_Riders[MAX_RIDERS];
 	void InitRiderList();
-	int ReadRideFile();
+	int ReadRiderFile();
 	CDashBoard* m_pWndDashboard;
+	CDashBoard m_Dashboard;
 	CDashBoard* CreateDashBoard();
 	afx_msg void OnBnClickedButtonDashboard();
+	void ResetRider();
+	int FindRider(ANTMsg* pMsg);
+	void UpdateRider(ANTMsg* pMsg, int nRider);
 };

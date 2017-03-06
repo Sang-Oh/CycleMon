@@ -126,9 +126,10 @@ BOOL CAntMonDlg::OnInitDialog()
 	pDlgMon = this;
 
 	InitRiderList();
-	ReadRideFile();
+	ResetRider();
+	ReadRiderFile();
 
-	m_pWndDashboard = CreateDashBoard();
+	CreateDashBoard();
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -337,6 +338,7 @@ void CAntMonDlg::HandleMessage(UCHAR *pcBuffer_)
 	if (nMsgIndex < 0) return;// error
 	pMsg = &m_rxMsg[nMsgIndex];
 	
+	int riderIndex = -1;
 	if (pMsg->deviceNo == 0xFFFF)
 	{
 		//new device
@@ -346,7 +348,7 @@ void CAntMonDlg::HandleMessage(UCHAR *pcBuffer_)
 		AddNewDevice(pMsg);
 	}
 	
-	if (pMsg->deviceType == 120) {	// heartrate
+	if (pMsg->deviceType == ANT_TYPE_HEART) {	// heartrate
 		UCHAR bpm = pcBuffer_[7];
 		USHORT time = (0xFF00 & (USHORT)pcBuffer_[5] << 4) |pcBuffer_[4];
 		USHORT count = pcBuffer_[6];
@@ -359,10 +361,12 @@ void CAntMonDlg::HandleMessage(UCHAR *pcBuffer_)
 			pMsg->hrCount = count;
 			pMsg->hrTime = time;
 
+			riderIndex = FindRider(pMsg);
+			m_Riders[riderIndex].heart = pMsg->hrBpm;
 		//	ControlHUE(pMsg);
 		}
 	}
-	else if (pMsg->deviceType == 17 && pcBuffer_[0]==25) {	// bike power
+	else if (pMsg->deviceType == ANT_TYPE_PWR && pcBuffer_[0]==25) {	// bike power
 		pMsg->pwrValue = pcBuffer_[5];
 		/*
 		char szBody[256];
@@ -371,10 +375,15 @@ void CAntMonDlg::HandleMessage(UCHAR *pcBuffer_)
 		pCommand->length = strlen(pCommand->buffer);
 		AddHueCommand(pCommand);
 		*/
+		riderIndex = FindRider(pMsg);
+		m_Riders[riderIndex].power = pMsg->pwrValue;
 		TRACE(_T("Power Rate %d %d %d %d %d %d %d %d\n"), pcBuffer_[0], pcBuffer_[1], pcBuffer_[2], pcBuffer_[3], pcBuffer_[4], pcBuffer_[5], pcBuffer_[6], pcBuffer_[7]);
 	}
 	else if (pMsg->deviceType == 121) {	// bike candence and speed
+	}
 
+	if (riderIndex != -1) {
+		UpdateRider(pMsg, riderIndex);
 	}
 }
 
@@ -678,7 +687,7 @@ void CAntMonDlg::InitRiderList()
 }
 
 
-int CAntMonDlg::ReadRideFile()
+int CAntMonDlg::ReadRiderFile()
 {
 	CString iniFile = FILE_RIDER;
 	char szBuffer[MAX_PATH];
@@ -686,6 +695,7 @@ int CAntMonDlg::ReadRideFile()
 	long lAnt_ID;
 	for (int i = 0;i < MAX_RIDERS;i++)
 	{
+		RIDER *pRider = &m_Riders[i];
 		section.Format("%02d", i + 1);
 		m_listRider.InsertItem(i, section);
 		
@@ -697,9 +707,12 @@ int CAntMonDlg::ReadRideFile()
 
 		GetPrivateProfileString(section, "ant_power_id", "0", szBuffer, sizeof(szBuffer), iniFile);
 		m_listRider.SetItem(i, 4, LVIF_TEXT, szBuffer, -1, -1, -1, NULL);
+		pRider->ant_power_id = atoi(szBuffer);
 
 		GetPrivateProfileString(section, "ant_heart_id", "0", szBuffer, sizeof(szBuffer), iniFile);
 		m_listRider.SetItem(i, 6, LVIF_TEXT, szBuffer, -1, -1, -1, NULL);
+		pRider->ant_heart_id = atoi(szBuffer);
+
 	}
 	return 0;
 }
@@ -707,20 +720,69 @@ int CAntMonDlg::ReadRideFile()
 
 CDashBoard* CAntMonDlg::CreateDashBoard()
 {
+	CString strClass = AfxRegisterWndClass(CS_HREDRAW | CS_VREDRAW, 0, (HBRUSH)(COLOR_WINDOW + 1));
+	m_Dashboard.SetRiders(&m_Riders[0], MAX_RIDERS);
+	CRect rect;
+	GetDesktopWindow()->GetWindowRect(&rect);
+	m_Dashboard.CreateEx(WS_EX_TOOLWINDOW,
+		strClass, _T("CyleMon"), WS_POPUP, rect.left, rect.top, rect.Width(), rect.Height(), m_hWnd, NULL, NULL);
+	/*
 	CDashBoard *pWnd = NULL;
 	CRect rect;
 	CString strClass = AfxRegisterWndClass(CS_HREDRAW | CS_VREDRAW, 0, (HBRUSH)(COLOR_WINDOW + 1));
 	pWnd = new CDashBoard();
+	pWnd->SetRiders(&m_Riders[0], MAX_RIDERS);
 	GetDesktopWindow()->GetWindowRect(&rect);
 	pWnd->CreateEx(WS_EX_TOOLWINDOW,
 		strClass, _T("CyleMon"), WS_POPUP, rect.left, rect.top, rect.Width(), rect.Height(), m_hWnd, NULL, NULL);
-
-	return pWnd;
+	*/
+	return NULL;
 }
 
 
 void CAntMonDlg::OnBnClickedButtonDashboard()
 {
-	if (m_pWndDashboard != NULL)
-		m_pWndDashboard->ShowWindow(SW_SHOW);
+	m_Dashboard.ShowWindow(SW_SHOW);
+}
+
+
+void CAntMonDlg::ResetRider()
+{
+	for (int i = 0;i < MAX_RIDERS;i++) {
+		RIDER *pRider = &m_Riders[i];
+		pRider->heart = 0;
+		pRider->power = 0;
+		pRider->speed = 0;
+		pRider->distance = 0;
+		pRider->cadence = 0;
+	}
+}
+
+
+int CAntMonDlg::FindRider(ANTMsg* pMsg)
+{
+	RIDER *pRider = NULL;
+	for (int i = 0;i < MAX_RIDERS;i++) {
+		pRider = &m_Riders[i];
+		if (pRider->ant_heart_id == pMsg->deviceNo && pMsg->deviceType == ANT_TYPE_HEART) {
+			return i;
+		}
+		if (pRider->ant_power_id == pMsg->deviceNo && pMsg->deviceType == ANT_TYPE_PWR) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+
+void CAntMonDlg::UpdateRider(ANTMsg* pMsg, int nRider)
+{
+	char szBuffer[32];
+	m_Dashboard.UpdateRider(nRider, 0);
+
+	sprintf(szBuffer, "%d", pMsg->pwrValue);
+	m_listRider.SetItem(nRider, 3, LVIF_TEXT, szBuffer, -1, -1, -1, NULL);
+
+	sprintf(szBuffer, "%d", pMsg->hrBpm);
+	m_listRider.SetItem(nRider, 5, LVIF_TEXT, szBuffer, -1, -1, -1, NULL);
 }
