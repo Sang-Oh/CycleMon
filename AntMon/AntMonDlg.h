@@ -13,9 +13,8 @@ using namespace Concurrency;
 #define MAX_DEVICES		128
 #define HUEBUFFER_COUNT	64
 #define HUEBUFFER_SIZE	256
-#define MAX_RIDERS		8
-#define FILE_RIDER		"..\\rider.ini"
-
+#define FILE_RIDER		"\\rider.ini"
+#define ANT_MSG_LENGTH	14
 
 typedef struct _ANTMsg {
 	USHORT deviceNo;
@@ -84,7 +83,6 @@ public:
 	int AddMsgBuf(USHORT deviceNo, USHORT deviceType);
 	void AddNewDevice(ANTMsg* pMsg);
 	void ControlHUE(RIDER *pRider);
-	void CleanUp();
 
 	// HUE Control
 	static UINT HueThread(LPVOID _mothod);
@@ -92,7 +90,6 @@ public:
 	CString m_strHueUrl;
 	concurrent_queue< HUECommand* > m_hueCommandQ;
 	void FuncHueThread(bool bStart);
-	CWinThread* m_pHueThread;
 	HANDLE m_hHueEvent;
 	bool AddHueCommand(HUECommand* pCommand);
 	
@@ -101,12 +98,14 @@ public:
 	RIDER m_Riders[MAX_RIDERS];
 	void InitRiderList();
 	int ReadRiderFile();
-	CDashBoard* m_pWndDashboard;
 	CDashBoard m_Dashboard;
-	CDashBoard* CreateDashBoard();
+	void CreateDashBoard();
 	afx_msg void OnBnClickedButtonDashboard();
 	void ResetRider();
 	int FindRider(ANTMsg* pMsg);
 	void UpdateRider(ANTMsg* pMsg, int nRider);
-	afx_msg void OnClose();
+
+	afx_msg void OnBnClickedOk();
+protected:
+	afx_msg LRESULT OnAntMsg(WPARAM wParam, LPARAM lParam);
 };
