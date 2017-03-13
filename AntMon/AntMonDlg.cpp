@@ -375,6 +375,11 @@ void CAntMonDlg::HandleMessage(UCHAR *pcBuffer_)
 		}
 		m_Riders[riderIndex].heart = pMsg->hrBpm;
 		m_Riders[riderIndex].heart_time = pMsg->hrTime;
+
+		m_Riders[riderIndex].power = pMsg->hrBpm;
+		m_Riders[riderIndex].power_time = pMsg->hrTime;
+
+		m_Riders[riderIndex].cadence = pMsg->hrBpm;
 		//	ControlHUE(pMsg);
 	}
 	else if ((pMsg->deviceType == ANT_TYPE_PWR || pMsg->deviceType == ANT_TYPE_PWR2) && pcBuffer_[0]==16) {	// bike power

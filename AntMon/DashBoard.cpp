@@ -25,6 +25,20 @@ CDashBoard::CDashBoard()
 		m_hisMaxValHeart[i] = 0;
 		m_hisMinValHeart[i] = 0xFFFF;
 		m_hisAvgValHeart[i] = 0;
+
+		m_nTopCadenceHistoryIndex[i] = -1;
+		m_timeLastCadenceHistory[i] = 0;
+		memset(&m_hisValCadence[i][0], 0, sizeof(USHORT)*MAX_HISTORY_LENGTH);
+		m_hisMaxValCadence[i] = 0;
+		m_hisMinValCadence[i] = 0xFFFF;
+		m_hisAvgValCadence[i] = 0;
+
+		m_nTopPowerHistoryIndex[i] = -1;
+		m_timeLastPowerHistory[i] = 0;
+		memset(&m_hisValPower[i][0], 0, sizeof(USHORT)*MAX_HISTORY_LENGTH);
+		m_hisMaxValPower[i] = 0;
+		m_hisMinValPower[i] = 0xFFFF;
+		m_hisAvgValPower[i] = 0;
 	}
 }
 
@@ -232,8 +246,8 @@ int CDashBoard::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_fontValue.CreateFont(int(0.3*m_nCellHeight*0.7*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
 	m_fontUnit.CreateFont(int(0.3*m_nCellHeight*0.3*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
 
-	m_fontAvgValue.CreateFont(int(0.3*m_nCellHeight*0.3*0.7), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
-	m_fontMaxValue.CreateFont(int(0.3*m_nCellHeight*0.3*0.7), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
+	m_fontAvgValue.CreateFont(int(0.3*m_nCellHeight*0.3*0.5), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
+	m_fontMaxValue.CreateFont(int(0.3*m_nCellHeight*0.3*0.5), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
 
 	m_fontNo.CreateFont(int(0.5*m_nCellHeight*0.25), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
 	m_fontPwr.CreateFont(int(0.6*m_nCellHeight*0.5), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
@@ -250,17 +264,23 @@ int CDashBoard::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_brushBGRider2.CreateSolidBrush(RGB(50, 50, 50)); //even
 
 	m_brushNo.CreateSolidBrush(RGB(255, 255, 255));
-	m_brushPwr.CreateSolidBrush(RGB(100, 0, 0));
+	m_brushPwr.CreateSolidBrush(RGB(43, 175, 47));
+	m_brushPwrChart.CreateSolidBrush(RGB(23, 85, 23));
 	m_brushHrt.CreateSolidBrush(m_colorHeart);
+	m_brushHrtChart.CreateSolidBrush(RGB(100, 0, 0));
 	m_brushSpd.CreateSolidBrush(RGB(97, 179, 228));
 	m_brushDis.CreateSolidBrush(RGB(255, 255, 0));
 	m_brushCad.CreateSolidBrush(m_colorCad);
+	m_brushCadChart.CreateSolidBrush(RGB(115, 15, 50));
 
 	m_penBG.CreatePen(PS_SOLID, 1, m_colorBG);
 	m_penBGRider.CreatePen(PS_SOLID, 1, m_colorBG);
-	m_penHeart.CreatePen(PS_SOLID, 3, m_colorHeart);
+	m_penHrt.CreatePen(PS_SOLID, 3, m_colorHeart);
+	m_penHrtChart.CreatePen(PS_SOLID, 1, m_colorHeart);
 	m_penPwr.CreatePen(PS_SOLID, 3, m_colorPwr);
+	m_penPwrChart.CreatePen(PS_SOLID, 1, m_colorPwr);
 	m_penCad.CreatePen(PS_SOLID, 3, m_colorCad);
+	m_penCadChart.CreatePen(PS_SOLID, 1, m_colorCad);
 
 	// alloc rider rectangle
 	for (int i = 0;i < m_nCol;i++) {
@@ -277,6 +297,15 @@ int CDashBoard::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		}
 	}
 
+	CRect *pRect = &m_rectRiders[0];
+	m_nPH = 5;
+	m_nPW = 5;
+	m_nTH = 4;
+	m_rowH = int(pRect->Height() / 3),
+		m_cyValue = int(0.7*(pRect->Height() / 3)),
+		m_cxValue = int(pRect->Width() / 2),
+		m_cyUnit = int(0.3*(pRect->Height() / 3)),
+		m_cxUnit = int(pRect->Width() / 2);
 
 	return 0;
 }
@@ -296,6 +325,8 @@ void CDashBoard::UpdateRider(int nRider, int nSensor)
 {
 	if (nSensor == ANT_TYPE_HEART) {
 		AddHeartHistory(nRider);
+		AddPowerHistory(nRider);
+		AddCadenceHistory(nRider);
 	}
 		
 	InvalidateRect(m_rectRiders[nRider]);
@@ -307,7 +338,7 @@ void CDashBoard::DrawRider(int nRider, CDC& dc)
 	CRect *pRect = &m_rectRiders[nRider];
 	RIDER *pRider = &m_pRiders[nRider];
 	POINT roundPt = { 20, 20};
-	char szBuf[64];
+
 	CRect rect;
 
 	if (nRider > 3) {
@@ -320,219 +351,11 @@ void CDashBoard::DrawRider(int nRider, CDC& dc)
 	dc.SelectObject(m_penEmpty);
 	dc.Rectangle(pRect);
 
-	// heart under line
-	int nPH = 5, nPW = 5;
-	int nTH = 4;
-	int x = pRect->left,
-		y = pRect->top, 
-		rowH = int(pRect->Height() / 3), 
-		cyValue = int(0.7*(pRect->Height() / 3)),
-		cxValue = int(pRect->Width()/2),
-		cyUnit = int(0.3*(pRect->Height() / 3)),
-		cxUnit = int(pRect->Width() / 2);
+	DrawHeartChart(nRider, dc);
 
-	dc.SelectObject(m_penHeart);
+	DrawPowerChart(nRider, dc);
 
-	/////////////////////////////
-	// heart
-	// under line 
-	dc.MoveTo(x + nPW, y + rowH - nPH);
-	dc.LineTo(x + cxValue - nPW, y + rowH - nPH);
-
-	dc.MoveTo(x + cxValue, y + rowH - nPH);
-	dc.LineTo(pRect->right, y + rowH - nPH);
-
-	// draw heart line
-	rect.SetRect(
-		pRect->right - MAX_HISTORY_LENGTH,
-		y,
-		pRect->right,
-		y + rowH - nPH
-	);
-	
-	USHORT *pHistory = &m_hisValHeart[nRider][0];
-	int nTopIndex = m_nTopHeartHistoryIndex[nRider];
-	CString log="";
-	if (nTopIndex != -1) {
-		//int nPrevIndex = GetPrevHistoryIndex(nTopIndex);
-		int chartMin = 20, chartMax = 100, chartHeight = rect.Height();
-		int chartValue = pHistory[nTopIndex];
-		int posValue = 0;
-
-		dc.SelectObject(m_brushPwr);
-		//dc.SetROP2(R2_MERGEPEN);
-		m_pointHistory[MAX_HISTORY_LENGTH].x = rect.left;
-		m_pointHistory[MAX_HISTORY_LENGTH].y = rect.bottom;
-
-		m_pointHistory[MAX_HISTORY_LENGTH + 1].x = rect.right;
-		m_pointHistory[MAX_HISTORY_LENGTH + 1].y = rect.bottom;
-		int nPrevIndex = GetNextHistoryIndex(nTopIndex);
-		for (int i = 0;i < MAX_HISTORY_LENGTH ;i++) {
-			chartValue = pHistory[nPrevIndex];
-			posValue = int(chartHeight * (chartValue - chartMin) / (chartMax - chartMin));
-			posValue = posValue < 0 ? 0 : posValue;
-
-			m_pointHistory[i].x = rect.right - i;
-			m_pointHistory[i].y = rect.bottom - posValue;
-			
-			nPrevIndex = GetPrevHistoryIndex(nPrevIndex);
-		}
-		dc.Polygon(m_pointHistory, sizeof(m_pointHistory) / sizeof(m_pointHistory[0]));
-
-		// min , max		
-		dc.SetTextColor(m_colorValue);
-		dc.SelectObject(m_fontMaxValue);
-		
-		posValue = int(chartHeight * (m_hisMaxValHeart[nRider] - chartMin) / (chartMax - chartMin));
-		posValue = posValue < 0 ? 0 : posValue;
-		rect.SetRect(
-			x + cxValue,
-			pRect->top,
-			pRect->right,
-			pRect->bottom
-		);
-		sprintf_s(szBuf, "%d", m_hisMaxValHeart[nRider]);
-		dc.DrawText(szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_TOP);
-		
-		posValue = int(chartHeight * (m_hisAvgValHeart[nRider] - chartMin) / (chartMax - chartMin));
-		posValue = posValue < 0 ? 0 : posValue;
-		rect.SetRect(
-			x + cxValue,
-			pRect->top,
-			pRect->right,
-			y + rowH - nPH
-		);
-		sprintf_s(szBuf, "%d", m_hisAvgValHeart[nRider]);
-		dc.DrawText(szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_BOTTOM);
-		
-	}
-
-
-	
-	// value
-	sprintf_s(szBuf, "%d", pRider->heart);
-	rect.SetRect(
-		x,
-		y,
-		x + cxValue,
-		y + cyValue
-	);
-	dc.SetTextColor(m_colorValue);
-	dc.SelectObject(m_fontValue);
-	dc.DrawText(szBuf, rect, DT_SINGLELINE | DT_CENTER | DT_BOTTOM);
-	// unit
-	rect.SetRect(
-		x,
-		y+cyValue,
-		x + cxUnit,
-		y + cyValue+ cyUnit
-	);
-	dc.SetTextColor(m_colorUnit);
-	dc.SelectObject(m_fontUnit);
-	dc.DrawText("bpm", rect, DT_SINGLELINE | DT_CENTER | DT_TOP);
-
-
-
-
-	////////////////////
-	// power
-	y += rowH;
-	dc.SelectObject(m_penPwr);
-	dc.MoveTo(x + nPW, y + rowH - nPH);
-	dc.LineTo(x + cxValue - nPW, y + rowH - nPH);
-
-	dc.MoveTo(x + cxValue, y + rowH - nPH);
-	dc.LineTo(pRect->right, y + rowH - nPH);
-	/*
-	dc.SelectObject(m_brushPwr);
-	rect.SetRect(
-		x + nPW,
-		y + rowH - nTH - nPH,
-		x + cxValue - nPW,
-		y + rowH - nPH
-	);
-	dc.Rectangle(rect);
-
-	rect.SetRect(
-		x + nPW + cxValue,
-		y + rowH - nTH - nPH,
-		pRect->right,
-		y + rowH - nPH
-	);
-	dc.Rectangle(rect);
-	*/
-	// value
-	sprintf_s(szBuf, "%d", pRider->power);
-	rect.SetRect(
-		x,
-		y,
-		x + cxValue,
-		y + cyValue
-	);
-	dc.SetTextColor(m_colorValue);
-	dc.SelectObject(m_fontValue);
-	dc.DrawText(szBuf, rect, DT_SINGLELINE | DT_CENTER | DT_BOTTOM);
-	// unit
-	rect.SetRect(
-		x,
-		y + cyValue,
-		x + cxUnit,
-		y + cyValue + cyUnit
-	);
-	dc.SetTextColor(m_colorUnit);
-	dc.SelectObject(m_fontUnit);
-	dc.DrawText("watt", rect, DT_SINGLELINE | DT_CENTER | DT_TOP);
-
-
-	// cad
-	y += rowH;
-	dc.SelectObject(m_penCad);
-	dc.MoveTo(x + nPW, y + rowH - nPH);
-	dc.LineTo(x + cxValue - nPW, y + rowH - nPH);
-
-	dc.MoveTo(x + cxValue, y + rowH - nPH);
-	dc.LineTo(pRect->right, y + rowH - nPH);
-
-	/*
-	dc.SelectObject(m_brushCad);
-	rect.SetRect(
-		x + nPW,
-		y + rowH - nTH - nPH,
-		x + cxValue - nPW,
-		y + rowH - nPH
-	);
-	dc.Rectangle(rect);
-
-	rect.SetRect(
-		x + nPW + cxValue,
-		y + rowH - nTH - nPH,
-		pRect->right,
-		y + rowH - nPH
-	);
-	dc.Rectangle(rect);
-	*/
-
-	// value
-	sprintf_s(szBuf, "%d", pRider->cadence);
-	rect.SetRect(
-		x,
-		y,
-		x + cxValue,
-		y + cyValue
-	);
-	dc.SetTextColor(m_colorValue);
-	dc.SelectObject(m_fontValue);
-	dc.DrawText(szBuf, rect, DT_SINGLELINE | DT_CENTER | DT_BOTTOM);
-	// unit
-	rect.SetRect(
-		x,
-		y + cyValue,
-		x + cxUnit,
-		y + cyValue + cyUnit
-	);
-	dc.SetTextColor(m_colorUnit);
-	dc.SelectObject(m_fontUnit);
-	dc.DrawText("rpm", rect, DT_SINGLELINE | DT_CENTER | DT_TOP);
+	DrawCadenceChart(nRider, dc);
 
 }
 
@@ -579,6 +402,73 @@ void CDashBoard::AddHeartHistory(int rider)
 
 }
 
+void CDashBoard::AddPowerHistory(int rider)
+{
+	__time64_t now = CTime::GetCurrentTime().GetTime();
+	__time64_t last = m_timeLastPowerHistory[rider];
+	long diff = now - last;
+	int topIndex = m_nTopPowerHistoryIndex[rider];
+	int nNextIndex = GetNextHistoryIndex(topIndex);
+	USHORT *pValues = &m_hisValPower[rider][0];
+	if (topIndex != -1) {
+		for (long i = 0;i < diff;i++) { // if empty value by second
+			pValues[nNextIndex] = m_pRiders[rider].power;
+			nNextIndex = GetNextHistoryIndex(nNextIndex);
+		}
+	}
+	pValues[nNextIndex] = m_pRiders[rider].power;
+	m_nTopPowerHistoryIndex[rider] = nNextIndex;
+	m_timeLastPowerHistory[rider] = now;
+
+	// min max
+	m_hisMinValPower[rider] = m_hisMinValPower[rider] > m_pRiders[rider].power ? m_pRiders[rider].power : m_hisMinValPower[rider];
+	m_hisMaxValPower[rider] = m_hisMaxValPower[rider] < m_pRiders[rider].power ? m_pRiders[rider].power : m_hisMaxValPower[rider];
+	ULONG sum = 0, count = 0, value;
+	for (int i = 0;i<MAX_HISTORY_LENGTH;i++) {
+		value = pValues[nNextIndex];
+		if (value != 0) {
+			count++;
+			sum += value;
+		}
+		nNextIndex = GetNextHistoryIndex(nNextIndex);
+	}
+	m_hisAvgValPower[rider] = (USHORT)(sum / count);
+
+}
+
+void CDashBoard::AddCadenceHistory(int rider)
+{
+	__time64_t now = CTime::GetCurrentTime().GetTime();
+	__time64_t last = m_timeLastCadenceHistory[rider];
+	long diff = now - last;
+	int topIndex = m_nTopCadenceHistoryIndex[rider];
+	int nNextIndex = GetNextHistoryIndex(topIndex);
+	USHORT *pValues = &m_hisValCadence[rider][0];
+	if (topIndex != -1) {
+		for (long i = 0;i < diff;i++) { // if empty value by second
+			pValues[nNextIndex] = m_pRiders[rider].cadence;
+			nNextIndex = GetNextHistoryIndex(nNextIndex);
+		}
+	}
+	pValues[nNextIndex] = m_pRiders[rider].cadence;
+	m_nTopCadenceHistoryIndex[rider] = nNextIndex;
+	m_timeLastCadenceHistory[rider] = now;
+
+	// min max
+	m_hisMinValCadence[rider] = m_hisMinValCadence[rider] > m_pRiders[rider].cadence ? m_pRiders[rider].cadence : m_hisMinValCadence[rider];
+	m_hisMaxValCadence[rider] = m_hisMaxValCadence[rider] < m_pRiders[rider].cadence ? m_pRiders[rider].cadence : m_hisMaxValCadence[rider];
+	ULONG sum = 0, count = 0, value;
+	for (int i = 0;i<MAX_HISTORY_LENGTH;i++) {
+		value = pValues[nNextIndex];
+		if (value != 0) {
+			count++;
+			sum += value;
+		}
+		nNextIndex = GetNextHistoryIndex(nNextIndex);
+	}
+	m_hisAvgValCadence[rider] = (USHORT)(sum / count);
+
+}
 
 int CDashBoard::GetPrevHistoryIndex(int nIndex)
 {
@@ -591,4 +481,306 @@ int CDashBoard::GetNextHistoryIndex(int nIndex)
 {
 	int nNextIndex = nIndex + 1;
 	return nNextIndex>MAX_HISTORY_LENGTH - 1?0: nNextIndex;
+}
+
+void CDashBoard::DrawHeartChart(int nRider, CDC& dc)
+{
+	CRect *pRect = &m_rectRiders[nRider];
+	RIDER *pRider = &m_pRiders[nRider];
+
+	// heart under line
+	int x = pRect->left, y = pRect->top;
+
+	dc.SelectObject(m_penHrt);
+
+	/////////////////////////////
+	// heart
+	// under line 
+	dc.MoveTo(x + m_nPW, y + m_rowH - m_nPH);
+	dc.LineTo(x + m_cxValue - m_nPW, y + m_rowH - m_nPH);
+
+	dc.MoveTo(x + m_cxValue, y + m_rowH - m_nPH);
+	dc.LineTo(pRect->right, y + m_rowH - m_nPH);
+
+	// draw heart line
+	CRect rect(
+		pRect->right - MAX_HISTORY_LENGTH,
+		y,
+		pRect->right,
+		y + m_rowH - m_nPH
+	);
+
+	USHORT *pHistory = &m_hisValHeart[nRider][0];
+	int nTopIndex = m_nTopHeartHistoryIndex[nRider];
+	CString log = "";
+	if (nTopIndex != -1) {
+		int chartValue = pHistory[nTopIndex];
+		int posValue = 0;
+
+		
+		m_pointHistory[MAX_HISTORY_LENGTH].x = rect.left;
+		m_pointHistory[MAX_HISTORY_LENGTH].y = rect.bottom-1;
+
+		m_pointHistory[MAX_HISTORY_LENGTH + 1].x = rect.right-1;
+		m_pointHistory[MAX_HISTORY_LENGTH + 1].y = rect.bottom-1;
+
+		int nPrevIndex = GetNextHistoryIndex(nTopIndex);
+		for (int i = 0;i < MAX_HISTORY_LENGTH;i++) {
+			chartValue = pHistory[nPrevIndex];
+
+			posValue = GetChartPosValue(chartValue, m_hisMaxValHeart[nRider], m_hisMinValHeart[nRider], rect.Height());
+			m_pointHistory[i].x = rect.right - i;
+			m_pointHistory[i].y = rect.bottom - posValue;
+
+			nPrevIndex = GetPrevHistoryIndex(nPrevIndex);
+		}
+
+		dc.SelectObject(m_brushHrtChart);
+		dc.SelectObject(m_penHrtChart);
+		dc.Polygon(m_pointHistory, sizeof(m_pointHistory) / sizeof(m_pointHistory[0]));
+
+		// min , max		
+		dc.SetTextColor(m_colorValue);
+		dc.SelectObject(m_fontMaxValue);
+
+		rect.SetRect(
+			pRect->left + m_cxValue,
+			y,
+			pRect->right,
+			y + m_rowH - m_nPH
+		);
+		sprintf_s(m_szBuf, "%d", m_hisMaxValHeart[nRider]);
+		dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_TOP);
+
+		sprintf_s(m_szBuf, "%d", m_hisAvgValHeart[nRider]);
+		dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
+
+		sprintf_s(m_szBuf, "%d", m_hisMinValHeart[nRider]);
+		dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_BOTTOM);
+	}
+	// value
+	sprintf_s(m_szBuf, "%d", pRider->heart);
+	rect.SetRect(
+		x,
+		y,
+		x + m_cxValue,
+		y + m_cyValue
+	);
+	dc.SetTextColor(m_colorValue);
+	dc.SelectObject(m_fontValue);
+	dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_CENTER | DT_BOTTOM);
+	// unit
+	rect.SetRect(
+		x,
+		y + m_cyValue,
+		x + m_cxUnit,
+		y + m_cyValue + m_cyUnit
+	);
+	dc.SetTextColor(m_colorUnit);
+	dc.SelectObject(m_fontUnit);
+	dc.DrawText("bpm", rect, DT_SINGLELINE | DT_CENTER | DT_TOP);
+}
+
+void CDashBoard::DrawPowerChart(int nRider, CDC& dc)
+{
+	CRect *pRect = &m_rectRiders[nRider];
+	RIDER *pRider = &m_pRiders[nRider];
+
+	// Power under line
+	int x = pRect->left, y = pRect->top + m_rowH;
+
+	dc.SelectObject(m_penPwr);
+
+	/////////////////////////////
+	// Power
+	// under line 
+	dc.MoveTo(x + m_nPW, y + m_rowH - m_nPH);
+	dc.LineTo(x + m_cxValue - m_nPW, y + m_rowH - m_nPH);
+
+	dc.MoveTo(x + m_cxValue, y + m_rowH - m_nPH);
+	dc.LineTo(pRect->right, y + m_rowH - m_nPH);
+
+	// draw Power line
+	CRect rect(
+		pRect->right - MAX_HISTORY_LENGTH,
+		y,
+		pRect->right,
+		y + m_rowH - m_nPH
+	);
+
+	USHORT *pHistory = &m_hisValPower[nRider][0];
+	int nTopIndex = m_nTopPowerHistoryIndex[nRider];
+	CString log = "";
+	if (nTopIndex != -1) {
+		int chartValue = pHistory[nTopIndex];
+		int posValue = 0;
+
+		m_pointHistory[MAX_HISTORY_LENGTH].x = rect.left;
+		m_pointHistory[MAX_HISTORY_LENGTH].y = rect.bottom - 1;
+
+		m_pointHistory[MAX_HISTORY_LENGTH + 1].x = rect.right - 1;
+		m_pointHistory[MAX_HISTORY_LENGTH + 1].y = rect.bottom - 1;
+
+		int nPrevIndex = GetNextHistoryIndex(nTopIndex);
+		for (int i = 0;i < MAX_HISTORY_LENGTH;i++) {
+			chartValue = pHistory[nPrevIndex];
+
+			posValue = GetChartPosValue(chartValue, m_hisMaxValPower[nRider], m_hisMinValPower[nRider], rect.Height());
+			m_pointHistory[i].x = rect.right - i;
+			m_pointHistory[i].y = rect.bottom - posValue;
+
+			nPrevIndex = GetPrevHistoryIndex(nPrevIndex);
+		}
+
+		dc.SelectObject(m_brushPwrChart);
+		dc.SelectObject(m_penPwrChart);
+		dc.Polygon(m_pointHistory, sizeof(m_pointHistory) / sizeof(m_pointHistory[0]));
+
+		// min , max		
+		dc.SetTextColor(m_colorValue);
+		dc.SelectObject(m_fontMaxValue);
+
+		rect.SetRect(
+			pRect->left + m_cxValue,
+			y,
+			pRect->right,
+			y + m_rowH - m_nPH
+		);
+		sprintf_s(m_szBuf, "%d", m_hisMaxValPower[nRider]);
+		dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_TOP);
+
+		sprintf_s(m_szBuf, "%d", m_hisAvgValPower[nRider]);
+		dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
+
+		sprintf_s(m_szBuf, "%d", m_hisMinValPower[nRider]);
+		dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_BOTTOM);
+	}
+	// value
+	sprintf_s(m_szBuf, "%d", pRider->power);
+	rect.SetRect(
+		x,
+		y,
+		x + m_cxValue,
+		y + m_cyValue
+	);
+	dc.SetTextColor(m_colorValue);
+	dc.SelectObject(m_fontValue);
+	dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_CENTER | DT_BOTTOM);
+	// unit
+	rect.SetRect(
+		x,
+		y + m_cyValue,
+		x + m_cxUnit,
+		y + m_cyValue + m_cyUnit
+	);
+	dc.SetTextColor(m_colorUnit);
+	dc.SelectObject(m_fontUnit);
+	dc.DrawText("watt", rect, DT_SINGLELINE | DT_CENTER | DT_TOP);
+}
+
+void CDashBoard::DrawCadenceChart(int nRider, CDC& dc)
+{
+	CRect *pRect = &m_rectRiders[nRider];
+	RIDER *pRider = &m_pRiders[nRider];
+
+	// Cadence under line
+	int x = pRect->left, y = pRect->top + m_rowH*2;
+
+	dc.SelectObject(m_penCad);
+
+	/////////////////////////////
+	// Cadence
+	// under line 
+	dc.MoveTo(x + m_nPW, y + m_rowH - m_nPH);
+	dc.LineTo(x + m_cxValue - m_nPW, y + m_rowH - m_nPH);
+
+	dc.MoveTo(x + m_cxValue, y + m_rowH - m_nPH);
+	dc.LineTo(pRect->right, y + m_rowH - m_nPH);
+
+	// draw Cadence line
+	CRect rect(
+		pRect->right - MAX_HISTORY_LENGTH,
+		y,
+		pRect->right,
+		y + m_rowH - m_nPH
+	);
+
+	USHORT *pHistory = &m_hisValCadence[nRider][0];
+	int nTopIndex = m_nTopCadenceHistoryIndex[nRider];
+	CString log = "";
+	if (nTopIndex != -1) {
+		int chartValue = pHistory[nTopIndex];
+		int posValue = 0;
+
+
+		m_pointHistory[MAX_HISTORY_LENGTH].x = rect.left;
+		m_pointHistory[MAX_HISTORY_LENGTH].y = rect.bottom - 1;
+
+		m_pointHistory[MAX_HISTORY_LENGTH + 1].x = rect.right - 1;
+		m_pointHistory[MAX_HISTORY_LENGTH + 1].y = rect.bottom - 1;
+
+		int nPrevIndex = GetNextHistoryIndex(nTopIndex);
+		for (int i = 0;i < MAX_HISTORY_LENGTH;i++) {
+			chartValue = pHistory[nPrevIndex];
+
+			posValue = GetChartPosValue(chartValue, m_hisMaxValCadence[nRider], m_hisMinValCadence[nRider], rect.Height());
+			m_pointHistory[i].x = rect.right - i;
+			m_pointHistory[i].y = rect.bottom - posValue;
+
+			nPrevIndex = GetPrevHistoryIndex(nPrevIndex);
+		}
+
+		dc.SelectObject(m_brushCadChart);
+		dc.SelectObject(m_penCadChart);
+		dc.Polygon(m_pointHistory, sizeof(m_pointHistory) / sizeof(m_pointHistory[0]));
+
+		// min , max		
+		dc.SetTextColor(m_colorValue);
+		dc.SelectObject(m_fontMaxValue);
+
+		rect.SetRect(
+			pRect->left + m_cxValue,
+			y,
+			pRect->right,
+			y + m_rowH - m_nPH
+		);
+		sprintf_s(m_szBuf, "%d", m_hisMaxValCadence[nRider]);
+		dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_TOP);
+
+		sprintf_s(m_szBuf, "%d", m_hisAvgValCadence[nRider]);
+		dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
+
+		sprintf_s(m_szBuf, "%d", m_hisMinValCadence[nRider]);
+		dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_BOTTOM);
+	}
+	// value
+	sprintf_s(m_szBuf, "%d", pRider->cadence);
+	rect.SetRect(
+		x,
+		y,
+		x + m_cxValue,
+		y + m_cyValue
+	);
+	dc.SetTextColor(m_colorValue);
+	dc.SelectObject(m_fontValue);
+	dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_CENTER | DT_BOTTOM);
+	// unit
+	rect.SetRect(
+		x,
+		y + m_cyValue,
+		x + m_cxUnit,
+		y + m_cyValue + m_cyUnit
+	);
+	dc.SetTextColor(m_colorUnit);
+	dc.SelectObject(m_fontUnit);
+	dc.DrawText("rpm", rect, DT_SINGLELINE | DT_CENTER | DT_TOP);
+}
+
+int CDashBoard::GetChartPosValue(int value, int max, int min, int chartHeight)
+{
+	int chartMin = int(min*0.9), chartMax = int(max*1.1);
+	int posValue = int(chartHeight * (value - chartMin) / (chartMax - chartMin));
+	posValue = posValue < 0 ? 0 : posValue;
+
+	return posValue;
 }

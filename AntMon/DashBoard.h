@@ -59,15 +59,22 @@ public:
 	CBrush m_brushBG;
 	CBrush m_brushNo;
 	CBrush m_brushPwr;
+	CBrush m_brushPwrChart;
 	CBrush m_brushHrt;
+	CBrush m_brushHrtChart;
 	CBrush m_brushSpd;
 	CBrush m_brushDis;
 	CBrush m_brushCad;
+	CBrush m_brushCadChart;
+
 
 	CPen m_penEmpty;
-	CPen m_penHeart;
+	CPen m_penHrt;
+	CPen m_penHrtChart;
 	CPen m_penPwr;
+	CPen m_penPwrChart;
 	CPen m_penCad;
+	CPen m_penCadChart;
 	CPen m_penBG;
 	CPen m_penBGRider;
 
@@ -78,6 +85,8 @@ public:
 	COLORREF m_colorHeart;
 	COLORREF m_colorPwr;
 	COLORREF m_colorCad;
+
+	char m_szBuf[64];
 
 	int m_nRow;
 	int m_nCol;
@@ -94,6 +103,15 @@ public:
 	int m_cyTitle;
 	CRect m_rectTitle;
 
+	int m_nPH;
+	int m_nPW;
+	int m_nTH;
+	int m_rowH;
+	int m_cyValue;
+	int m_cxValue;
+	int m_cyUnit;
+	int m_cxUnit;
+
 	USHORT	m_hisValHeart[MAX_RIDERS][MAX_HISTORY_LENGTH];
 	int	m_nTopHeartHistoryIndex[MAX_HISTORY_LENGTH];
 	__time64_t m_timeLastHeartHistory[MAX_RIDERS];
@@ -101,11 +119,33 @@ public:
 	USHORT	m_hisMinValHeart[MAX_RIDERS];
 	USHORT	m_hisAvgValHeart[MAX_RIDERS];
 
+	USHORT	m_hisValPower[MAX_RIDERS][MAX_HISTORY_LENGTH];
+	int	m_nTopPowerHistoryIndex[MAX_HISTORY_LENGTH];
+	__time64_t m_timeLastPowerHistory[MAX_RIDERS];
+	USHORT	m_hisMaxValPower[MAX_RIDERS];
+	USHORT	m_hisMinValPower[MAX_RIDERS];
+	USHORT	m_hisAvgValPower[MAX_RIDERS];
+
+	USHORT	m_hisValCadence[MAX_RIDERS][MAX_HISTORY_LENGTH];
+	int	m_nTopCadenceHistoryIndex[MAX_HISTORY_LENGTH];
+	__time64_t m_timeLastCadenceHistory[MAX_RIDERS];
+	USHORT	m_hisMaxValCadence[MAX_RIDERS];
+	USHORT	m_hisMinValCadence[MAX_RIDERS];
+	USHORT	m_hisAvgValCadence[MAX_RIDERS];
+
 	POINT m_pointHistory[MAX_HISTORY_LENGTH+2];
 
 	void AddHeartHistory(int rider);
+	void AddPowerHistory(int rider);
+	void AddCadenceHistory(int rider);
+
 	int GetPrevHistoryIndex(int nIndex);
 	int GetNextHistoryIndex(int nIndex);
+	void DrawHeartChart(int nRider, CDC& dc);
+	void DrawPowerChart(int nRider, CDC& dc);
+	void DrawCadenceChart(int nRider, CDC& dc);
+
+	int GetChartPosValue(int value, int max, int min, int height);
 };
 
 
