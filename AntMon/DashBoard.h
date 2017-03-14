@@ -5,7 +5,7 @@
 #define ANT_TYPE_PWR	11
 #define ANT_TYPE_PWR2	121
 
-#define MAX_RIDERS		8
+#define MAX_RIDERS		10
 
 #define MAX_HISTORY_LENGTH 120
 
@@ -146,6 +146,7 @@ public:
 	void DrawCadenceChart(int nRider, CDC& dc);
 
 	int GetChartPosValue(int value, int max, int min, int height);
+	void DrawRiderNo(int nRider, CDC& dc);
 };
 
 

@@ -367,19 +367,16 @@ void CAntMonDlg::HandleMessage(UCHAR *pcBuffer_)
 		pMsg->hrTime = time;
 
 		riderIndex = FindRider(pMsg);
-		if (riderIndex != -1) {
+		if (riderIndex != -1 && pMsg->hrBpm > 0 && pMsg->hrBpm<250) {
 			if (m_Riders[riderIndex].heart != pMsg->hrBpm ||
 				m_Riders[riderIndex].heart_time != pMsg->hrTime) {
 				bUpdateDashboard = true;
 			}
+			m_Riders[riderIndex].heart = pMsg->hrBpm;
+			m_Riders[riderIndex].heart_time = pMsg->hrTime;
+
+
 		}
-		m_Riders[riderIndex].heart = pMsg->hrBpm;
-		m_Riders[riderIndex].heart_time = pMsg->hrTime;
-
-		m_Riders[riderIndex].power = pMsg->hrBpm;
-		m_Riders[riderIndex].power_time = pMsg->hrTime;
-
-		m_Riders[riderIndex].cadence = pMsg->hrBpm;
 		//	ControlHUE(pMsg);
 	}
 	else if ((pMsg->deviceType == ANT_TYPE_PWR || pMsg->deviceType == ANT_TYPE_PWR2) && pcBuffer_[0]==16) {	// bike power
@@ -387,7 +384,9 @@ void CAntMonDlg::HandleMessage(UCHAR *pcBuffer_)
 		pMsg->cadValue = pcBuffer_[3];
 		
 		riderIndex = FindRider(pMsg);
-		if (riderIndex != -1) {
+		if (riderIndex != -1 && 
+			pMsg->cadValue >0 && pMsg->cadValue < 200 &&
+			pMsg->pwrValue >0 && pMsg->pwrValue < 2000 ) {
 			if (m_Riders[riderIndex].power != pMsg->pwrValue || m_Riders[riderIndex].cadence != pMsg->cadValue) {
 				m_Riders[riderIndex].power = pMsg->pwrValue;
 				m_Riders[riderIndex].cadence = pMsg->cadValue;

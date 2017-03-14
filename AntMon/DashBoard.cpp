@@ -11,7 +11,7 @@ IMPLEMENT_DYNAMIC(CDashBoard, CWnd)
 
 CDashBoard::CDashBoard()
 	: m_nRow(2)
-	, m_nCol(4)
+	, m_nCol(5)
 	, m_nCellHeight(0)
 	, m_nCellWidth(0)
 	, m_pRiders(NULL)
@@ -234,7 +234,7 @@ int CDashBoard::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_colorValue = RGB(255, 255, 255);
 	m_colorUnit = RGB(150, 150, 150);
 	m_colorBG = RGB(90, 179, 228);
-	m_colorTitle = RGB(255, 255, 255);
+	m_colorTitle = RGB(0, 0, 0);
 	m_colorHeart = RGB(255, 28, 35);
 	m_colorPwr = RGB(43, 175, 47);
 	m_colorCad = RGB(233, 30, 99);
@@ -242,26 +242,26 @@ int CDashBoard::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_nCellWidth = (lpCreateStruct->cx- nPW *2)/m_nCol;
 	m_nCellHeight = (lpCreateStruct->cy- m_cyTitle) /m_nRow;
 
-	m_fontTitle.CreateFont(int(m_cyTitle*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
-	m_fontValue.CreateFont(int(0.3*m_nCellHeight*0.7*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
-	m_fontUnit.CreateFont(int(0.3*m_nCellHeight*0.3*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
+	m_fontTitle.CreateFont(int(m_cyTitle*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Cambria");
+	m_fontValue.CreateFont(int(0.3*m_nCellHeight*0.7*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
+	m_fontUnit.CreateFont(int(0.3*m_nCellHeight*0.3*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
 
-	m_fontAvgValue.CreateFont(int(0.3*m_nCellHeight*0.3*0.5), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
-	m_fontMaxValue.CreateFont(int(0.3*m_nCellHeight*0.3*0.5), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
+	m_fontAvgValue.CreateFont(int(0.3*m_nCellHeight*0.3*0.5), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
+	m_fontMaxValue.CreateFont(int(0.3*m_nCellHeight*0.3*0.5), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
 
-	m_fontNo.CreateFont(int(0.5*m_nCellHeight*0.25), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
-	m_fontPwr.CreateFont(int(0.6*m_nCellHeight*0.5), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
-	m_fontHrt.CreateFont(int(0.3*m_nCellHeight*0.5), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
-	m_fontSpd.CreateFont(int(0.6*m_nCellHeight*0.25), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
-	m_fontDis.CreateFont(int(0.6*m_nCellHeight*0.25), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
-	m_fontCad.CreateFont(int(0.6*m_nCellHeight*0.25), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "±Ã¼­Ã¼");
+	m_fontNo.CreateFont(int(0.1*m_nCellHeight), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
+	m_fontPwr.CreateFont(int(0.6*m_nCellHeight*0.5), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
+	m_fontHrt.CreateFont(int(0.3*m_nCellHeight*0.5), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
+	m_fontSpd.CreateFont(int(0.6*m_nCellHeight*0.25), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
+	m_fontDis.CreateFont(int(0.6*m_nCellHeight*0.25), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
+	m_fontCad.CreateFont(int(0.6*m_nCellHeight*0.25), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
 
 	m_penEmpty.CreatePen(PS_SOLID, 0, RGB(0, 0, 0));
 
 	m_brushBG.CreateSolidBrush(m_colorBG);
 
 	m_brushBGRider1.CreateSolidBrush(RGB(0, 0, 0));	//odd
-	m_brushBGRider2.CreateSolidBrush(RGB(50, 50, 50)); //even
+	m_brushBGRider2.CreateSolidBrush(RGB(35, 35, 35)); //even
 
 	m_brushNo.CreateSolidBrush(RGB(255, 255, 255));
 	m_brushPwr.CreateSolidBrush(RGB(43, 175, 47));
@@ -325,6 +325,8 @@ void CDashBoard::UpdateRider(int nRider, int nSensor)
 {
 	if (nSensor == ANT_TYPE_HEART) {
 		AddHeartHistory(nRider);
+	}
+	if (nSensor == ANT_TYPE_PWR || nSensor == ANT_TYPE_PWR2) {
 		AddPowerHistory(nRider);
 		AddCadenceHistory(nRider);
 	}
@@ -341,20 +343,14 @@ void CDashBoard::DrawRider(int nRider, CDC& dc)
 
 	CRect rect;
 
-	if (nRider > 3) {
-		dc.SelectObject(nRider%2?m_brushBGRider1: m_brushBGRider2);
-	}
-	else {
-		dc.SelectObject(nRider % 2 ? m_brushBGRider2 : m_brushBGRider1);
-	}
+	dc.SelectObject(nRider % 2 ? m_brushBGRider1 : m_brushBGRider2);
 	
 	dc.SelectObject(m_penEmpty);
 	dc.Rectangle(pRect);
 
+	DrawRiderNo(nRider, dc);
 	DrawHeartChart(nRider, dc);
-
 	DrawPowerChart(nRider, dc);
-
 	DrawCadenceChart(nRider, dc);
 
 }
@@ -364,7 +360,7 @@ void CDashBoard::DrawTitle(CDC& dc)
 {
 	dc.SelectObject(m_fontTitle);
 	dc.SetTextColor(m_colorTitle);
-	dc.DrawText("Cyclepark", m_rectTitle, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
+	dc.DrawText("ride@cyclepark", m_rectTitle, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
 }
 
 
@@ -783,4 +779,16 @@ int CDashBoard::GetChartPosValue(int value, int max, int min, int chartHeight)
 	posValue = posValue < 0 ? 0 : posValue;
 
 	return posValue;
+}
+
+
+void CDashBoard::DrawRiderNo(int nRider, CDC& dc)
+{
+	CRect *pRect = &m_rectRiders[nRider];
+	RIDER *pRider = &m_pRiders[nRider];
+
+	dc.SelectObject(m_fontNo);
+	dc.SetTextColor(RGB(255, 255, 0));
+	sprintf_s(m_szBuf, "%02d", nRider + 1);
+	dc.DrawText(m_szBuf, pRect, DT_SINGLELINE | DT_LEFT | DT_TOP);
 }
