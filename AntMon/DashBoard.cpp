@@ -86,6 +86,7 @@ void CDashBoard::OnPaint()
 
 	// title
 	DrawTitle(MemDC);
+	DrawInterval(MemDC);
 
 	for (int i = 0; i < m_nRiders;i++) {
 		DrawRider(i,MemDC);
@@ -226,8 +227,13 @@ int CDashBoard::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 	
 	m_cyTitle = int(lpCreateStruct->cy / 9);
-	m_rectTitle.SetRect(10, 10, lpCreateStruct->cx-10, m_cyTitle-10);
-	
+	m_rectTitle.SetRect(0, 0, lpCreateStruct->cx, m_cyTitle);
+
+	// interval rect pos
+	m_rectInterval.SetRect(lpCreateStruct->cx / 2, 10, lpCreateStruct->cx - 10, m_cyTitle - 10);
+	m_rectIntervalLabel.SetRect(m_rectInterval.left, m_rectInterval.top, m_rectInterval.left+ m_rectInterval.Width() / 3, m_rectInterval.bottom);
+	m_rectIntervalTimer.SetRect(m_rectInterval.left +m_rectInterval.Width()/3, m_rectInterval.top, m_rectInterval.right-100, m_rectInterval.bottom);
+	m_rectIntervalTimerLabel.SetRect(m_rectIntervalLabel.right, m_rectInterval.top, m_rectInterval.right, m_rectInterval.bottom);
 	int nPW = 1;
 
 	// color
@@ -243,6 +249,8 @@ int CDashBoard::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_nCellHeight = (lpCreateStruct->cy- m_cyTitle) /m_nRow;
 
 	m_fontTitle.CreateFont(int(m_cyTitle*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Cambria");
+	m_fontInterval.CreateFont(int(m_cyTitle*0.7), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
+
 	m_fontValue.CreateFont(int(0.3*m_nCellHeight*0.7*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
 	m_fontUnit.CreateFont(int(0.3*m_nCellHeight*0.3*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
 
@@ -272,6 +280,14 @@ int CDashBoard::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_brushDis.CreateSolidBrush(RGB(255, 255, 0));
 	m_brushCad.CreateSolidBrush(m_colorCad);
 	m_brushCadChart.CreateSolidBrush(RGB(115, 15, 50));
+
+	m_brushInterval.CreateSolidBrush(RGB(255, 255, 255));
+	m_brushIntervalLabel.CreateSolidBrush(RGB(35, 35, 35));
+	m_brushTimer.CreateSolidBrush(RGB(255, 255, 0));
+
+	m_penInterval.CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
+	m_penTimer.CreatePen(PS_SOLID, 1, RGB(255, 0, 0));
+	m_penTimerLeft.CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
 
 	m_penBG.CreatePen(PS_SOLID, 1, m_colorBG);
 	m_penBGRider.CreatePen(PS_SOLID, 1, m_colorBG);
@@ -791,4 +807,38 @@ void CDashBoard::DrawRiderNo(int nRider, CDC& dc)
 	dc.SetTextColor(RGB(255, 255, 0));
 	sprintf_s(m_szBuf, "%02d", nRider + 1);
 	dc.DrawText(m_szBuf, pRect, DT_SINGLELINE | DT_LEFT | DT_TOP);
+}
+
+
+void CDashBoard::DrawInterval(CDC& dc)
+{
+
+	// background
+	dc.SelectObject(m_brushInterval);
+	dc.Rectangle(m_rectInterval);
+	
+	// title
+	dc.SelectObject(m_brushIntervalLabel);
+	dc.Rectangle(m_rectIntervalLabel);
+	sprintf_s(m_szBuf, "%d/%d", 1, 10);
+	dc.SelectObject(m_fontInterval);
+	dc.SetTextColor(m_colorValue);
+	dc.DrawText(m_szBuf, m_rectIntervalLabel, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+
+	// timer
+	dc.SelectObject(m_brushTimer);
+	dc.Rectangle(m_rectIntervalTimer);
+	dc.SetTextColor(RGB(0, 0, 0));
+	dc.DrawText("35", m_rectIntervalTimerLabel, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+}
+
+
+void CDashBoard::FuncInterval(bool bStart)
+{
+	if (bStart) {
+		SetTimer(1, 1000, NULL);
+	}
+	else {
+		KillTimer(1);
+	}
 }

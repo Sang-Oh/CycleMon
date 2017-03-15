@@ -48,6 +48,8 @@ public:
 	CFont m_fontDis;
 	CFont m_fontCad;
 
+	CFont m_fontInterval;
+
 	CFont m_fontValue;
 	CFont m_fontUnit;
 
@@ -67,6 +69,14 @@ public:
 	CBrush m_brushCad;
 	CBrush m_brushCadChart;
 
+	CBrush m_brushInterval;
+	CBrush m_brushIntervalLabel;
+	CBrush m_brushTimer;
+	CBrush m_brushTimerPassed;
+
+	CPen m_penInterval;
+	CPen m_penTimer;
+	CPen m_penTimerLeft;
 
 	CPen m_penEmpty;
 	CPen m_penHrt;
@@ -102,6 +112,12 @@ public:
 	void DrawTitle(CDC& dc);
 	int m_cyTitle;
 	CRect m_rectTitle;
+
+	CRect m_rectInterval;
+	CRect m_rectIntervalTimerLabel;
+	CRect m_rectIntervalTimer;
+	CRect m_rectIntervalLabel;
+
 
 	int m_nPH;
 	int m_nPW;
@@ -147,6 +163,10 @@ public:
 
 	int GetChartPosValue(int value, int max, int min, int height);
 	void DrawRiderNo(int nRider, CDC& dc);
+	void DrawInterval(CDC& dc);
+	void FuncInterval(bool bStart);
+	int m_nIdInterval;
+	long m_nTimeElappsed;
 };
 
 
