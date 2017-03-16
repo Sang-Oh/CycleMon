@@ -166,7 +166,9 @@ public:
 	void DrawInterval(CDC& dc);
 	void FuncInterval(bool bStart);
 	int m_nIdInterval;
-	long m_nTimeElappsed;
+	int m_nEllapsed;
+	DWORD m_tickTimerStarted;
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 };
 
 

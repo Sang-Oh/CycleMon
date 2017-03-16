@@ -108,6 +108,4 @@ public:
 	afx_msg void OnBnClickedOk();
 protected:
 	afx_msg LRESULT OnAntMsg(WPARAM wParam, LPARAM lParam);
-public:
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
 };

@@ -63,8 +63,6 @@ CAntMonDlg::CAntMonDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_ANTMON_DIALOG, pParent)
 	, m_bOpened(false)
 	, m_bHueThreadStop(false)
-	, m_nTimeElappsed(0),
-	, m_nIdTime
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	m_strHueUrl = _T("http://192.168.1.200/api/q2HQvhloDSN5MQHa3zDGyfpgR34CDWzTOh394zDx/lights/");
@@ -94,7 +92,6 @@ BEGIN_MESSAGE_MAP(CAntMonDlg, CDialogEx)
 	ON_WM_CLOSE()
 	ON_BN_CLICKED(IDOK, &CAntMonDlg::OnBnClickedOk)
 	ON_MESSAGE(WM_ANT_MSG, &CAntMonDlg::OnAntMsg)
-	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -195,7 +192,7 @@ HCURSOR CAntMonDlg::OnQueryDragIcon()
 
 void CAntMonDlg::OnBnClickedButtonStart()
 {
-	FuncService(true);
+	m_Dashboard.FuncInterval(true);
 }
 
 
@@ -315,7 +312,7 @@ void CAntMonDlg::ANTCallback(UCHAR ucEvent_, char* pcBuffer_)
 
 void CAntMonDlg::OnBnClickedButtonStop()
 {
-	StopMon();
+	m_Dashboard.FuncInterval(false);
 }
 
 
@@ -834,10 +831,3 @@ afx_msg LRESULT CAntMonDlg::OnAntMsg(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-
-void CAntMonDlg::OnTimer(UINT_PTR nIDEvent)
-{
-	// TODO: Add your message handler code here and/or call default
-
-	CDialogEx::OnTimer(nIDEvent);
-}

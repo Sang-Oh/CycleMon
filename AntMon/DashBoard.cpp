@@ -17,6 +17,9 @@ CDashBoard::CDashBoard()
 	, m_pRiders(NULL)
 	, m_nRiders(0)
 	, m_cyTitle(0)
+	, m_nIdInterval(0)
+	, m_tickTimerStarted(0)
+	, m_nEllapsed(0)
 {
 	for (int i = 0;i < MAX_RIDERS;i++) {
 		m_nTopHeartHistoryIndex[i] = -1;
@@ -52,6 +55,7 @@ BEGIN_MESSAGE_MAP(CDashBoard, CWnd)
 	ON_WM_ERASEBKGND()
 	ON_WM_KEYUP()
 	ON_WM_CREATE()
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -829,16 +833,27 @@ void CDashBoard::DrawInterval(CDC& dc)
 	dc.SelectObject(m_brushTimer);
 	dc.Rectangle(m_rectIntervalTimer);
 	dc.SetTextColor(RGB(0, 0, 0));
-	dc.DrawText("35", m_rectIntervalTimerLabel, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+	sprintf_s(m_szBuf, "%d", m_nEllapsed);
+	dc.DrawText(m_szBuf, m_rectIntervalTimerLabel, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
 }
 
 
 void CDashBoard::FuncInterval(bool bStart)
 {
-	if (bStart) {
-		SetTimer(1, 1000, NULL);
+	if (bStart && m_nIdInterval==0) {
+		m_nEllapsed = 0;
+		m_tickTimerStarted = GetTickCount();
+		m_nIdInterval = SetTimer(1, 1000, NULL);
 	}
 	else {
-		KillTimer(1);
+		KillTimer(m_nIdInterval);
 	}
+}
+
+
+void CDashBoard::OnTimer(UINT_PTR nIDEvent)
+{
+	m_nEllapsed = (GetTickCount() - m_tickTimerStarted)/1000;
+	InvalidateRect(m_rectIntervalTimer);
+	CWnd::OnTimer(nIDEvent);
 }
