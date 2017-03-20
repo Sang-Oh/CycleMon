@@ -54,6 +54,9 @@
     <ClInclude Include="DashBoard.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Sound.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AntMon.cpp">
@@ -74,6 +77,9 @@
     <ClCompile Include="DashBoard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Sound.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="AntMon.rc">
@@ -89,5 +95,16 @@
     <Image Include="res\AntMon.ico">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="res\High Seiko SQ50.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\tick.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
+    <Media Include="res\2.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
   </ItemGroup>
 </Project>

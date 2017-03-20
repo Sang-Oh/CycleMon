@@ -16,6 +16,7 @@ using namespace Concurrency;
 #define FILE_RIDER		"\\rider.ini"
 #define ANT_MSG_LENGTH	14
 
+#define MAX_INTERVALS 100
 typedef struct _ANTMsg {
 	USHORT deviceNo;
 	USHORT deviceType;
@@ -96,6 +97,8 @@ public:
 	void FuncService(bool bStart);
 	CListCtrl m_listRider;
 	RIDER m_Riders[MAX_RIDERS];
+	int m_nSizeInterval;
+	INTERVAL m_Intervals[MAX_INTERVALS];
 	void InitRiderList();
 	int ReadRiderFile();
 	CDashBoard m_Dashboard;
@@ -108,4 +111,6 @@ public:
 	afx_msg void OnBnClickedOk();
 protected:
 	afx_msg LRESULT OnAntMsg(WPARAM wParam, LPARAM lParam);
+public:
+	bool ReadIntervalFile(char* szFilePath);
 };

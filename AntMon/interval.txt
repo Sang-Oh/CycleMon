@@ -1,0 +1,5 @@
+WARM UP	180	90				warmup_start	half	1mstop		5stop	
+1/5	120	90				interval_start	half			5stop	
+REST	210	80				rest	half			5start	
+2/5	420	90					half			5stop	
+COOL DOWN	1200	90				cooldown_start	half				cooldown_stop

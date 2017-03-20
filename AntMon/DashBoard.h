@@ -1,6 +1,7 @@
 #pragma once
 #include "afxwin.h"
 #include "atltypes.h"
+#include "Sound.h"
 #define ANT_TYPE_HEART	120
 #define ANT_TYPE_PWR	11
 #define ANT_TYPE_PWR2	121
@@ -8,6 +9,22 @@
 #define MAX_RIDERS		10
 
 #define MAX_HISTORY_LENGTH 120
+
+typedef struct _INTERVAL {
+	char title[64];		// title
+	long duration;		// second
+	double powerRate;
+	int cadence;
+	int hueId;
+	double heartRate;
+	long timer;
+	char startSound[32];
+	char halfSound[32];
+	char m1Sound[32];
+	char s10Sound[32];
+	char s5Sound[32];
+	char stopSound[32];
+} INTERVAL;
 
 typedef struct _RIDER {
 	char name[256];
@@ -49,6 +66,7 @@ public:
 	CFont m_fontCad;
 
 	CFont m_fontInterval;
+	CFont m_fontTimer;
 
 	CFont m_fontValue;
 	CFont m_fontUnit;
@@ -106,6 +124,8 @@ public:
 	int SetRiders(RIDER* pRiders,int nRiders);
 	RIDER* m_pRiders;
 	int m_nRiders;
+	INTERVAL* m_pIntervals;
+	int m_nSizeIntervals;
 	CRect m_rectRiders[MAX_RIDERS];
 	void UpdateRider(int nRider, int nSensor);
 	void DrawRider(int nRider, CDC& dc);
@@ -115,6 +135,7 @@ public:
 
 	CRect m_rectInterval;
 	CRect m_rectIntervalTimerLabel;
+	CRect m_rectIntervalTimerEllapsed;
 	CRect m_rectIntervalTimer;
 	CRect m_rectIntervalLabel;
 
@@ -164,11 +185,20 @@ public:
 	int GetChartPosValue(int value, int max, int min, int height);
 	void DrawRiderNo(int nRider, CDC& dc);
 	void DrawInterval(CDC& dc);
-	void FuncInterval(bool bStart);
-	int m_nIdInterval;
-	int m_nEllapsed;
+
+	void FuncInterval(bool bStart,INTERVAL *pInterval, int nSize);
+	int m_timerInterval;
+	int m_timerCadence;
+	long m_timeEllapsed;
+	long m_timeTotal;
+	long m_timeLeft;
+	int m_nIndexIntevals;
+
+	int m_nCadenceInterval;
 	DWORD m_tickTimerStarted;
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	void SetCadenceTimer(int candence);
+	CSound m_sound;
 };
 
 

@@ -17,9 +17,13 @@ CDashBoard::CDashBoard()
 	, m_pRiders(NULL)
 	, m_nRiders(0)
 	, m_cyTitle(0)
-	, m_nIdInterval(0)
+	, m_timerInterval(0)
 	, m_tickTimerStarted(0)
-	, m_nEllapsed(0)
+	, m_timeEllapsed(0)
+	, m_nCadenceInterval(0)
+	, m_nIndexIntevals(-1)
+	, m_timerCadence(0)
+	, m_pIntervals(NULL)
 {
 	for (int i = 0;i < MAX_RIDERS;i++) {
 		m_nTopHeartHistoryIndex[i] = -1;
@@ -47,6 +51,7 @@ CDashBoard::CDashBoard()
 
 CDashBoard::~CDashBoard()
 {
+
 }
 
 
@@ -95,107 +100,7 @@ void CDashBoard::OnPaint()
 	for (int i = 0; i < m_nRiders;i++) {
 		DrawRider(i,MemDC);
 	}
-/*
-	CRect rect;
 
-	
-
-
-	// draw white frame
-	MemDC.SetBkMode(TRANSPARENT);
-	MemDC.SelectStockObject(WHITE_PEN);
-	for (int i = 0;i < m_nCol;i++) {
-		for (int j = 0;j < m_nRow;j++) {
-			int x = m_nCellWidth*i, y = m_nCellHeight*(m_nRow / 2 - j);
-			rect.SetRect(x, y, x + m_nCellWidth, y + m_nCellHeight);
-			MemDC.Rectangle(rect);
-		}
-	}
-
-	// draw rider no
-	MemDC.SelectObject(m_fontNo);
-	MemDC.SetTextColor(RGB(255, 255, 255));
-	for (int i = 0;i < m_nCol;i++) {
-		for (int j = 0;j < m_nRow;j++) {
-			int rider = m_nCol*j + i;
-			int x = m_nCellWidth*i, y = m_nCellHeight*(m_nRow/2-j);
-
-			rect.SetRect(x + 10, y + 10, x + m_nCellWidth, y + int(m_nCellHeight*0.25));
-			sprintf_s(szBuf, "%02d", rider + 1);
-			MemDC.DrawText(szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_TOP);
-		}
-	}
-
-	// draw power
-	MemDC.SelectObject(m_fontPwr);
-	MemDC.SetTextColor(RGB(255, 255, 0));
-	for (int i = 0;i < m_nCol;i++) {
-		for (int j = 0;j < m_nRow;j++) {
-			int rider = m_nCol*j + i;
-			int x = m_nCellWidth*i, y = m_nCellHeight*(m_nRow / 2 - j);
-			rect.SetRect(x + 10, y + 10, x + m_nCellWidth, y + int(m_nCellHeight*0.5));
-
-			sprintf_s(szBuf, "%d", m_pRiders[rider].power);
-			MemDC.DrawText(szBuf, rect, DT_SINGLELINE | DT_CENTER | DT_BOTTOM);
-		}
-	}
-
-	// draw hbt
-	MemDC.SelectObject(m_fontHrt);
-	MemDC.SetTextColor(RGB(255, 0, 0));
-	for (int i = 0;i < m_nCol;i++) {
-		for (int j = 0;j < m_nRow;j++) {
-			int rider = m_nCol*j + i;
-			int x = m_nCellWidth*i, y = m_nCellHeight*(m_nRow / 2 - j);
-			rect.SetRect(x, y +  int(m_nCellHeight*0.5), x + int(m_nCellWidth*0.5), y + int(m_nCellHeight*0.75));
-
-			sprintf_s(szBuf, "%d", m_pRiders[rider].heart);
-			MemDC.DrawText(szBuf, rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
-		}
-	}
-
-	// draw cad
-	MemDC.SelectObject(m_fontCad);
-	MemDC.SetTextColor(RGB(0, 0, 255));
-	for (int i = 0;i < m_nCol;i++) {
-		for (int j = 0;j < m_nRow;j++) {
-			int rider = m_nCol*j + i;
-			int x = m_nCellWidth*i, y = m_nCellHeight*(m_nRow / 2 - j);
-			rect.SetRect(x + int(m_nCellWidth*0.5), y + int(m_nCellHeight*0.5), x + m_nCellWidth, y + int(m_nCellHeight*0.75));
-
-			sprintf_s(szBuf, "%d", m_pRiders[rider].cadence);
-			MemDC.DrawText(szBuf, rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
-		}
-	}
-	
-	// draw spd
-	MemDC.SelectObject(m_fontSpd);
-	MemDC.SetTextColor(RGB(255, 255, 255));
-	for (int i = 0;i < m_nCol;i++) {
-		for (int j = 0;j < m_nRow;j++) {
-			int rider = m_nCol*j + i;
-			int x = m_nCellWidth*i, y = m_nCellHeight*(m_nRow/2-j);
-			rect.SetRect(x, y + m_nCellHeight*0.75, x + m_nCellWidth*0.5, y + m_nCellHeight);
-
-			sprintf(szBuf, "%.1f", m_pRiders[rider].speed);
-			MemDC.DrawText(szBuf, rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
-		}
-	}
-
-	// draw dis
-	MemDC.SelectObject(m_fontDis);
-	MemDC.SetTextColor(RGB(255, 255, 255));
-	for (int i = 0;i < m_nCol;i++) {
-		for (int j = 0;j < m_nRow;j++) {
-			int rider = m_nCol*j + i;
-			int x = m_nCellWidth*i, y = m_nCellHeight*(m_nRow/2-j);
-			rect.SetRect(x + m_nCellWidth*0.5, y + m_nCellHeight*0.75, x + m_nCellWidth, y + m_nCellHeight);
-
-			sprintf(szBuf, "%.1f", m_pRiders[rider].distance);
-			MemDC.DrawText(szBuf, rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
-		}
-	}
-*/
 	dc.BitBlt(0, 0, clientRect.Width(), clientRect.Height(), &MemDC, 0, 0, SRCCOPY);
 	
 	MemDC.SelectObject(pOldPen);
@@ -235,8 +140,14 @@ int CDashBoard::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	// interval rect pos
 	m_rectInterval.SetRect(lpCreateStruct->cx / 2, 10, lpCreateStruct->cx - 10, m_cyTitle - 10);
-	m_rectIntervalLabel.SetRect(m_rectInterval.left, m_rectInterval.top, m_rectInterval.left+ m_rectInterval.Width() / 3, m_rectInterval.bottom);
-	m_rectIntervalTimer.SetRect(m_rectInterval.left +m_rectInterval.Width()/3, m_rectInterval.top, m_rectInterval.right-100, m_rectInterval.bottom);
+	m_rectIntervalLabel.SetRect(m_rectInterval.left, m_rectInterval.top, m_rectInterval.left+ m_rectInterval.Width() / 2, m_rectInterval.bottom);
+	m_rectIntervalTimer.SetRect(m_rectIntervalLabel.right, m_rectInterval.top, m_rectInterval.right, m_rectInterval.bottom);
+	m_rectIntervalTimerEllapsed.SetRect(
+		m_rectIntervalTimer.left,
+		m_rectIntervalTimer.top,
+		m_rectIntervalTimer.right,
+		m_rectIntervalTimer.bottom
+	);
 	m_rectIntervalTimerLabel.SetRect(m_rectIntervalLabel.right, m_rectInterval.top, m_rectInterval.right, m_rectInterval.bottom);
 	int nPW = 1;
 
@@ -253,13 +164,14 @@ int CDashBoard::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_nCellHeight = (lpCreateStruct->cy- m_cyTitle) /m_nRow;
 
 	m_fontTitle.CreateFont(int(m_cyTitle*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Cambria");
-	m_fontInterval.CreateFont(int(m_cyTitle*0.7), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
+	m_fontInterval.CreateFont(int(m_cyTitle*0.6), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
+	m_fontTimer.CreateFont(int(m_cyTitle*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
 
 	m_fontValue.CreateFont(int(0.3*m_nCellHeight*0.7*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
 	m_fontUnit.CreateFont(int(0.3*m_nCellHeight*0.3*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
 
-	m_fontAvgValue.CreateFont(int(0.3*m_nCellHeight*0.3*0.5), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
-	m_fontMaxValue.CreateFont(int(0.3*m_nCellHeight*0.3*0.5), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
+	m_fontAvgValue.CreateFont(int(0.3*m_nCellHeight*0.3*0.7), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
+	m_fontMaxValue.CreateFont(int(0.3*m_nCellHeight*0.3*0.7), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
 
 	m_fontNo.CreateFont(int(0.1*m_nCellHeight), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
 	m_fontPwr.CreateFont(int(0.6*m_nCellHeight*0.5), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
@@ -285,7 +197,7 @@ int CDashBoard::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_brushCad.CreateSolidBrush(m_colorCad);
 	m_brushCadChart.CreateSolidBrush(RGB(115, 15, 50));
 
-	m_brushInterval.CreateSolidBrush(RGB(255, 255, 255));
+	m_brushInterval.CreateSolidBrush(RGB(255, 0, 0));
 	m_brushIntervalLabel.CreateSolidBrush(RGB(35, 35, 35));
 	m_brushTimer.CreateSolidBrush(RGB(255, 255, 0));
 
@@ -668,6 +580,7 @@ void CDashBoard::DrawPowerChart(int nRider, CDC& dc)
 		sprintf_s(m_szBuf, "%d", m_hisAvgValPower[nRider]);
 		dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
 
+		sprintf_s(m_szBuf, "%.2f", m_hisMinValPower[nRider]/pRider->weight);
 		sprintf_s(m_szBuf, "%d", m_hisMinValPower[nRider]);
 		dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_BOTTOM);
 	}
@@ -816,6 +729,10 @@ void CDashBoard::DrawRiderNo(int nRider, CDC& dc)
 
 void CDashBoard::DrawInterval(CDC& dc)
 {
+	int gap = 0;
+	if (m_pIntervals == NULL) return;
+
+	INTERVAL *pInterval = &m_pIntervals[m_nIndexIntevals];
 
 	// background
 	dc.SelectObject(m_brushInterval);
@@ -824,36 +741,111 @@ void CDashBoard::DrawInterval(CDC& dc)
 	// title
 	dc.SelectObject(m_brushIntervalLabel);
 	dc.Rectangle(m_rectIntervalLabel);
-	sprintf_s(m_szBuf, "%d/%d", 1, 10);
+	sprintf_s(m_szBuf, "%s", pInterval->title);
 	dc.SelectObject(m_fontInterval);
 	dc.SetTextColor(m_colorValue);
 	dc.DrawText(m_szBuf, m_rectIntervalLabel, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
 
 	// timer
 	dc.SelectObject(m_brushTimer);
-	dc.Rectangle(m_rectIntervalTimer);
+
+	gap = m_rectIntervalTimer.Width()*(pInterval->duration - m_timeLeft) / (double)pInterval->duration;
+	m_rectIntervalTimerEllapsed.right = m_rectIntervalTimerEllapsed.left+gap;
+
+	dc.Rectangle(m_rectIntervalTimerEllapsed);
+	dc.SelectObject(m_fontTimer);
 	dc.SetTextColor(RGB(0, 0, 0));
-	sprintf_s(m_szBuf, "%d", m_nEllapsed);
+	if (m_timeLeft > 59) {
+		sprintf_s(m_szBuf, "%02d:%02d", m_timeLeft/60, m_timeLeft%60);
+	}
+	else {
+		sprintf_s(m_szBuf, "%d", m_timeLeft);
+	}
 	dc.DrawText(m_szBuf, m_rectIntervalTimerLabel, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
 }
 
 
-void CDashBoard::FuncInterval(bool bStart)
+void CDashBoard::FuncInterval(bool bStart, INTERVAL*pInterval, int nSize)
 {
-	if (bStart && m_nIdInterval==0) {
-		m_nEllapsed = 0;
+	if (bStart && m_timerInterval ==0) {
+		m_pIntervals = pInterval;
+		m_nSizeIntervals = nSize;
+		m_timeEllapsed = 0;
 		m_tickTimerStarted = GetTickCount();
-		m_nIdInterval = SetTimer(1, 1000, NULL);
+		m_timeLeft = 0;
+		m_timerInterval = SetTimer(1, 1000, NULL);
+		m_nIndexIntevals = -1;
+		m_timerCadence = 0;
 	}
 	else {
-		KillTimer(m_nIdInterval);
+		KillTimer(m_timerInterval);
+		SetCadenceTimer(0);
 	}
 }
 
 
 void CDashBoard::OnTimer(UINT_PTR nIDEvent)
 {
-	m_nEllapsed = (GetTickCount() - m_tickTimerStarted)/1000;
-	InvalidateRect(m_rectIntervalTimer);
+	if (nIDEvent == 1) {
+		m_timeEllapsed = (GetTickCount() - m_tickTimerStarted) / 1000 -1;
+
+		INTERVAL* pInterval;
+		for (int i = m_nSizeIntervals - 1;i > -1;i--) {
+			pInterval = &m_pIntervals[i];
+			if (m_timeEllapsed >= pInterval->timer) {
+				if (m_nIndexIntevals != i) {	// changed interval
+					SetCadenceTimer(pInterval->cadence);
+				}
+				m_nIndexIntevals = i;
+
+				m_timeLeft = pInterval->duration - (m_timeEllapsed - pInterval->timer);
+
+				if (m_timeLeft == pInterval->duration) {
+					m_sound.PLAYsound(pInterval->startSound);
+				}
+				else if (m_timeLeft == pInterval->duration / 2) {
+					m_sound.PLAYsound(pInterval->halfSound);
+				}
+				else if (m_timeLeft == 60) {
+					m_sound.PLAYsound(pInterval->m1Sound);
+				}
+				else if (m_timeLeft == 10) {
+					m_sound.PLAYsound(pInterval->s10Sound);
+				}
+				else if (m_timeLeft == 6) {
+					m_sound.PLAYsound(pInterval->s5Sound);
+				}
+				else if (m_timeLeft == 0) {
+					m_sound.PLAYsound(pInterval->stopSound);
+				}
+
+
+				break;
+			}
+		}
+
+		InvalidateRect(m_rectInterval);
+		if (m_timeLeft < 1) {
+			m_timeLeft = 0;
+			FuncInterval(false, NULL, 0);
+		}
+	}
+	else if (nIDEvent == 2) {
+		m_sound.PLAYsound("rpm");
+	}
+	
 	CWnd::OnTimer(nIDEvent);
+}
+
+
+void CDashBoard::SetCadenceTimer(int cadence)
+{
+	if (cadence == m_nCadenceInterval) return;
+	m_nCadenceInterval = cadence;
+	if (m_timerCadence != 0) {
+		KillTimer(m_timerCadence);
+	}
+	if (m_nCadenceInterval > 0) {
+		m_timerCadence = SetTimer(2, UINT(1000 * 60.0/m_nCadenceInterval), NULL);
+	}
 }

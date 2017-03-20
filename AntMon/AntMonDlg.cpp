@@ -192,7 +192,8 @@ HCURSOR CAntMonDlg::OnQueryDragIcon()
 
 void CAntMonDlg::OnBnClickedButtonStart()
 {
-	m_Dashboard.FuncInterval(true);
+	ReadIntervalFile("\\interval.txt");
+	m_Dashboard.FuncInterval(true, &m_Intervals[0], m_nSizeInterval);
 }
 
 
@@ -312,7 +313,7 @@ void CAntMonDlg::ANTCallback(UCHAR ucEvent_, char* pcBuffer_)
 
 void CAntMonDlg::OnBnClickedButtonStop()
 {
-	m_Dashboard.FuncInterval(false);
+	m_Dashboard.FuncInterval(false, NULL, 0);
 }
 
 
@@ -831,3 +832,65 @@ afx_msg LRESULT CAntMonDlg::OnAntMsg(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+
+
+bool CAntMonDlg::ReadIntervalFile(char* szFile)
+{
+	//CString iniFile = FILE_RIDER;
+	char szBuffer[MAX_PATH];
+
+	::GetCurrentDirectory(MAX_PATH, szBuffer);
+	strcat(szBuffer, szFile);
+
+	CString strLine;
+	m_nSizeInterval = 0;
+	TRY
+	{
+		CStdioFile file(szBuffer, CFile::modeRead);
+		CString title, time, cadence, power, heart, hue, startSound, halfSound, m1Sound, s10Sound, s5Sound, stopSound;
+		INTERVAL *pInterval;
+		long timer = 0;
+		char sep = '\t';
+		while (file.ReadString(strLine)) {
+			//title	time(s)	rpm	power	heart	hue	startSound	halfSound	1min Sound	10s Sound	5s Sound	stop Sound
+			AfxExtractSubString(title, strLine, 0, sep);
+			AfxExtractSubString(time, strLine, 1, sep);
+			AfxExtractSubString(cadence, strLine, 2, sep);
+			AfxExtractSubString(power, strLine, 3, sep);
+			AfxExtractSubString(heart, strLine, 4, sep);
+			AfxExtractSubString(hue, strLine, 5, sep);
+			AfxExtractSubString(startSound, strLine, 6, sep);
+			AfxExtractSubString(halfSound, strLine, 7, sep);
+			AfxExtractSubString(m1Sound, strLine, 8, sep);
+			AfxExtractSubString(s10Sound, strLine, 9, sep);
+			AfxExtractSubString(s5Sound, strLine, 10, sep);
+			AfxExtractSubString(stopSound, strLine, 11, sep);
+
+			pInterval = &m_Intervals[m_nSizeInterval];
+			
+			pInterval->timer = timer;
+			strcpy(pInterval->title, (LPCTSTR)title);
+			pInterval->duration = atol(time);
+			pInterval->powerRate = atof(power);
+			pInterval->cadence = atof(cadence);
+			pInterval->hueId = atol(hue);
+
+			strcpy(pInterval->startSound, (LPCTSTR)startSound);
+			strcpy(pInterval->halfSound, (LPCTSTR)halfSound);
+			strcpy(pInterval->m1Sound, (LPCTSTR)m1Sound);
+			strcpy(pInterval->s10Sound, (LPCTSTR)s10Sound);
+			strcpy(pInterval->s5Sound, (LPCTSTR)s5Sound);
+			strcpy(pInterval->stopSound, (LPCTSTR)stopSound);
+
+			timer += pInterval->duration;
+			m_nSizeInterval++;
+		}
+		file.Close();
+	}
+	CATCH_ALL(e)
+	{
+		e->ReportError(); // shows what's going wrong 
+	}
+	END_CATCH_ALL
+	return true;
+}
