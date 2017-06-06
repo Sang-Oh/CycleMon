@@ -170,8 +170,8 @@ int CDashBoard::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_fontValue.CreateFont(int(0.3*m_nCellHeight*0.7*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
 	m_fontUnit.CreateFont(int(0.3*m_nCellHeight*0.3*0.8), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
 
-	m_fontAvgValue.CreateFont(int(0.3*m_nCellHeight*0.3*0.7), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
-	m_fontMaxValue.CreateFont(int(0.3*m_nCellHeight*0.3*0.7), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
+	m_fontAvgValue.CreateFont(int(0.3*m_nCellHeight*0.4*0.7), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
+	m_fontMaxValue.CreateFont(int(0.3*m_nCellHeight*0.4*0.7), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
 
 	m_fontNo.CreateFont(int(0.1*m_nCellHeight), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
 	m_fontPwr.CreateFont(int(0.6*m_nCellHeight*0.5), 0, 0, 0, 0, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, "Arial");
@@ -219,7 +219,7 @@ int CDashBoard::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		for (int j = 0;j < m_nRow;j++) {
 			int rider = m_nCol*j + i;
 			int l = nPW + m_nCellWidth*i,
-				t = m_cyTitle + m_nCellHeight*(m_nRow / 2 - j);
+				t = m_cyTitle + m_nCellHeight*j;//(m_nRow / 2 - j);
 			int r = l + m_nCellWidth, b = t + m_nCellHeight;
 			
 			if (i == (m_nCol - 1)) r = lpCreateStruct->cx - 1;
@@ -274,8 +274,11 @@ void CDashBoard::DrawRider(int nRider, CDC& dc)
 	POINT roundPt = { 20, 20};
 
 	CRect rect;
+	//if (nRider<5)
+		dc.SelectObject(nRider % 2 ? m_brushBGRider2 : m_brushBGRider1);
+	//else
+		//dc.SelectObject(nRider % 2 ? m_brushBGRider1 : m_brushBGRider2);
 
-	dc.SelectObject(nRider % 2 ? m_brushBGRider1 : m_brushBGRider2);
 	
 	dc.SelectObject(m_penEmpty);
 	dc.Rectangle(pRect);
@@ -580,8 +583,8 @@ void CDashBoard::DrawPowerChart(int nRider, CDC& dc)
 		sprintf_s(m_szBuf, "%d", m_hisAvgValPower[nRider]);
 		dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
 
-		sprintf_s(m_szBuf, "%.2f", m_hisMinValPower[nRider]/pRider->weight);
-		sprintf_s(m_szBuf, "%d", m_hisMinValPower[nRider]);
+		sprintf_s(m_szBuf, "%.1f", pRider->power/pRider->weight);
+//		sprintf_s(m_szBuf, "%d", m_hisMinValPower[nRider]);
 		dc.DrawText(m_szBuf, rect, DT_SINGLELINE | DT_LEFT | DT_BOTTOM);
 	}
 	// value

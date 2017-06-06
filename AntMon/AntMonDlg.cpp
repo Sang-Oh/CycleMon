@@ -65,8 +65,8 @@ CAntMonDlg::CAntMonDlg(CWnd* pParent /*=NULL*/)
 	, m_bHueThreadStop(false)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
-	m_strHueUrl = _T("http://192.168.1.200/api/q2HQvhloDSN5MQHa3zDGyfpgR34CDWzTOh394zDx/lights/");
-	//m_strHueUrl = _T("http://192.168.1.4/api/q2HQvhloDSN5MQHa3zDGyfpgR34CDWzTOh394zDx/lights/5/state");
+	//m_strHueUrl = _T("http://192.168.1.200/api/q2HQvhloDSN5MQHa3zDGyfpgR34CDWzTOh394zDx/lights/");
+	m_strHueUrl = _T("http://192.168.1.200/api/api/q2HQvhloDSN5MQHa3zDGyfpgR34CDWzTOh394zDx/groups/1/action");
 	for (int i = 0;i < MAX_DEVICES;i++)
 	{
 		memset(&m_rxMsg[i], 0, sizeof(ANTMsg));
@@ -331,6 +331,21 @@ void CAntMonDlg::AddLog(LPCTSTR log)
 }
 
 
+void CAntMonDlg::WriteLog(UCHAR *pcBuffer_)
+{
+	char szMessage[256];
+	sprintf(szMessage, "%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\r\n", pcBuffer_[0], pcBuffer_[1], pcBuffer_[2], pcBuffer_[3], pcBuffer_[4], 
+		pcBuffer_[5], pcBuffer_[6], pcBuffer_[7],
+		pcBuffer_[8], pcBuffer_[9], pcBuffer_[10],
+		pcBuffer_[11]
+	);
+	
+	FILE *f = fopen("log.txt", "a");
+	fwrite(szMessage, 1, strlen(szMessage), f);
+	fclose(f);
+}
+
+
 void CAntMonDlg::HandleMessage(UCHAR *pcBuffer_)
 {
 	CHAR ucFlag = (UCHAR)pcBuffer_[8]; // Flag byte
@@ -381,7 +396,8 @@ void CAntMonDlg::HandleMessage(UCHAR *pcBuffer_)
 		//	ControlHUE(pMsg);
 	}
 	else if ((pMsg->deviceType == ANT_TYPE_PWR || pMsg->deviceType == ANT_TYPE_PWR2) && pcBuffer_[0]==16) {	// bike power
-		pMsg->pwrValue = pcBuffer_[6] | ( ((USHORT)pcBuffer_[7]<<8 & 0x1FF));
+		USHORT pwrMsb = (USHORT)pcBuffer_[7];
+		pMsg->pwrValue = pcBuffer_[6] | ( (pwrMsb << 8) & 0xFF00);
 		pMsg->cadValue = pcBuffer_[3];
 		
 		riderIndex = FindRider(pMsg);
@@ -390,6 +406,7 @@ void CAntMonDlg::HandleMessage(UCHAR *pcBuffer_)
 			pMsg->pwrValue >0 && pMsg->pwrValue < 2000 ) {
 			if (m_Riders[riderIndex].power != pMsg->pwrValue || m_Riders[riderIndex].cadence != pMsg->cadValue) {
 				m_Riders[riderIndex].power = pMsg->pwrValue;
+				if (pMsg->pwrValue > 1000) WriteLog(pcBuffer_);
 				m_Riders[riderIndex].cadence = pMsg->cadValue;
 				bUpdateDashboard = true;
 				//ControlHUE(&m_Riders[riderIndex]);
@@ -611,7 +628,7 @@ UINT CAntMonDlg::HueThread(LPVOID pParam)
 		while (pCommandQ->try_pop(pCommand)) {
 
 			hueStrObject.Format("%s%d/state", strObject, pCommand->hue_id);
-			TRACE("Q Size : %d, Hue : %s\n", pCommandQ->unsafe_size(), pCommand->buffer);
+			//TRACE("Q Size : %d, Hue : %s\n", pCommandQ->unsafe_size(), pCommand->buffer);
 			try
 			{
 				pHttpFile = pHttpConnect->OpenRequest(CHttpConnection::HTTP_VERB_PUT, hueStrObject, NULL);
@@ -656,6 +673,7 @@ UINT CAntMonDlg::HueThread(LPVOID pParam)
 	}
 	return 0;
 }
+
 
 
 void CAntMonDlg::FuncHueThread(bool bStart)

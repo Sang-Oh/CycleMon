@@ -4,3 +4,4 @@ ipch
 /AntMon.VC.VC.opendb
 /.vs\AntMon\v14/.suo
 AntMon.VC.db
+/AntMon/log.txt

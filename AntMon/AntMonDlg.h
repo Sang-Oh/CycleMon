@@ -16,7 +16,7 @@ using namespace Concurrency;
 #define FILE_RIDER		"\\rider.ini"
 #define ANT_MSG_LENGTH	14
 
-#define MAX_INTERVALS 100
+#define MAX_INTERVALS 500
 typedef struct _ANTMsg {
 	USHORT deviceNo;
 	USHORT deviceType;
@@ -81,6 +81,7 @@ public:
 	afx_msg void OnDestroy();
 	void AddLog(LPCTSTR log);
 	void HandleMessage(UCHAR *pBuffer);
+	void WriteLog(UCHAR *pcBuffer);
 	int AddMsgBuf(USHORT deviceNo, USHORT deviceType);
 	void AddNewDevice(ANTMsg* pMsg);
 	void ControlHUE(RIDER *pRider);
